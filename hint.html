@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>공장 트러블 대응반 | Hint</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="index.html">
+        <span class="brand-mark">HT</span>
+        <span>힌트 열람소<small>QR/힌트카드 코드 입력 전용</small></span>
+      </a>
+      <div class="nav-pills">
+        <button onclick="location.href='index.html'">플레이어</button>
+        <button onclick="location.href='admin.html'">관리자</button>
+        <button id="logoutBtn" class="danger hidden" onclick="logout()">로그아웃</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <section id="authView" class="view active">
+      <div class="stepper">
+        <div class="step active"><div class="num">1</div><strong>팀 인증</strong><span>힌트 열람 권한 확인</span></div>
+        <div class="step"><div class="num">2</div><strong>힌트 대기실</strong><span>팀 상태 확인</span></div>
+        <div class="step"><div class="num">3</div><strong>코드 입력</strong><span>QR/카드 코드 입력</span></div>
+        <div class="step"><div class="num">4</div><strong>힌트 공유</strong><span>팀에 핵심만 전달</span></div>
+      </div>
+      <div class="hero">
+        <div class="hero-card">
+          <span class="kicker">🔐 Field Clue Terminal</span>
+          <h1>힌트도<br>단계가 필요합니다.</h1>
+          <p>먼저 팀 인증을 하고, 힌트 대기실에서 현재 열람 수를 확인한 뒤 코드를 입력합니다. 이미 본 힌트는 다시 열람할 수 없습니다.</p>
+        </div>
+        <div class="hero-card hero-side">
+          <div class="metric-list">
+            <div class="metric"><div class="metric-label">힌트 방식</div><div class="metric-value">QR/코드</div></div>
+            <div class="metric"><div class="metric-label">중복 열람</div><div class="metric-value">차단</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>팀 로그인</h2>
+        <p>플레이어 페이지에서 이미 로그인했다면 자동으로 힌트 대기실로 이동합니다.</p>
+        <div class="form-grid two">
+          <div><label>팀 ID</label><input id="teamId" type="text" placeholder="예: TEAM01"></div>
+          <div><label>비밀번호</label><input id="teamPw" type="password" placeholder="팀 비밀번호"></div>
+        </div>
+        <div class="btn-row"><button class="primary" onclick="login()">힌트 대기실 입장</button></div>
+        <div id="loginMsg" class="footer-note"></div>
+      </div>
+    </section>
+
+    <section id="lobbyView" class="view">
+      <div class="stepper">
+        <div class="step done"><div class="num">1</div><strong>팀 인증</strong><span>완료</span></div>
+        <div class="step active"><div class="num">2</div><strong>힌트 대기실</strong><span>열람 현황 확인</span></div>
+        <div class="step"><div class="num">3</div><strong>코드 입력</strong><span>힌트 열람</span></div>
+        <div class="step"><div class="num">4</div><strong>힌트 공유</strong><span>팀 토론 반영</span></div>
+      </div>
+      <div class="hero">
+        <div class="hero-card">
+          <span class="kicker">📡 Hint Lobby</span>
+          <h1 id="lobbyTitle">힌트 대기실</h1>
+          <p>힌트는 팀 단위로 기록됩니다. 한 사람이 본 힌트는 팀 전체가 본 것으로 처리되므로, 핵심 내용을 바로 팀원에게 공유하세요.</p>
+          <div class="status-strip">
+            <span class="status-item" id="teamStatus">팀: -</span>
+            <span class="status-item" id="hintStatus">열람 힌트: -</span>
+          </div>
+        </div>
+        <div class="hero-card hero-side">
+          <div class="metric-list">
+            <div class="metric"><div class="metric-label">누적 열람</div><div id="metricHints" class="metric-value">0개</div></div>
+            <div class="metric"><div class="metric-label">권장 행동</div><div class="metric-value">공유</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="grid two">
+        <div class="action-card" onclick="showCodeView()"><div class="big-icon">🔎</div><h2>힌트 코드 입력</h2><p>QR을 찍어 나온 코드 또는 카드에 적힌 코드를 입력합니다.</p></div>
+        <div class="action-card" onclick="location.href='index.html'"><div class="big-icon">📟</div><h2>판단 화면으로 돌아가기</h2><p>수집한 힌트를 팀과 공유한 뒤 원인/조치 판단을 제출합니다.</p></div>
+      </div>
+      <div class="card" style="margin-top:18px;">
+        <div class="card-header"><div><h2>내 팀 힌트 열람 기록</h2><p>이미 본 힌트는 다시 볼 수 없습니다.</p></div><span class="badge">LOG</span></div>
+        <div id="hintLogTable" class="table-wrap"></div>
+      </div>
+    </section>
+
+    <section id="codeView" class="view">
+      <div class="stepper">
+        <div class="step done"><div class="num">1</div><strong>팀 인증</strong><span>완료</span></div>
+        <div class="step done"><div class="num">2</div><strong>힌트 대기실</strong><span>확인 완료</span></div>
+        <div class="step active"><div class="num">3</div><strong>코드 입력</strong><span>QR/카드 코드</span></div>
+        <div class="step"><div class="num">4</div><strong>힌트 공유</strong><span>열람 후 공유</span></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div><h2>힌트 코드 입력</h2><p>예시 데이터 기준: <b class="mono">R1-01</b>, <b class="mono">D2-01</b>, <b class="mono">Q3-01</b></p></div><span class="badge yellow">CODE</span></div>
+        <div class="form-grid two">
+          <div><label>힌트 코드</label><input id="hintCodeInput" type="text" placeholder="예: R1-01"></div>
+          <div style="display:flex; align-items:end;"><button class="primary" onclick="submitCode()">힌트 열람</button></div>
+        </div>
+        <div id="codeMessage" class="footer-note"></div>
+      </div>
+      <div class="notice" style="margin-top:18px;">힌트를 본 뒤에는 원문을 외우려 하지 말고, <b>판단에 영향을 주는 한 문장</b>으로 팀에 공유하세요.</div>
+    </section>
+
+    <section id="revealView" class="view">
+      <div class="stepper">
+        <div class="step done"><div class="num">1</div><strong>팀 인증</strong><span>완료</span></div>
+        <div class="step done"><div class="num">2</div><strong>코드 입력</strong><span>완료</span></div>
+        <div class="step active"><div class="num">3</div><strong>힌트 열람</strong><span>제한시간</span></div>
+        <div class="step"><div class="num">4</div><strong>힌트 공유</strong><span>팀 토론</span></div>
+      </div>
+      <div class="hint-reveal">
+        <div class="hint-code" id="hintCodeLabel">CODE</div>
+        <h1 id="hintTitle">힌트 제목</h1>
+        <p id="hintDescription">힌트 설명</p>
+        <div id="hintTimer" class="timer">--</div>
+        <div class="hr"></div>
+        <p id="hintText" class="hint-text"></p>
+        <img id="hintImage" alt="" class="hidden">
+        <div class="btn-row" style="justify-content:center;"><button class="primary" onclick="backToLobby()">확인 완료 · 팀에 공유하기</button></div>
+      </div>
+    </section>
+
+    <section id="blockedView" class="view">
+      <div class="card notice danger">
+        <h1>프로그램이 아직 시작되지 않았습니다.</h1>
+        <p>교육담당자가 관리자 페이지에서 프로그램을 시작하면 힌트를 열람할 수 있습니다.</p>
+        <button class="ghost" onclick="showView('authView')">로그인으로 돌아가기</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+  <script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCCxRR6hXvk9Z17eK8H_Vov_TbGX8LzvDs",
+  authDomain: "factory-sim01v.firebaseapp.com",
+  projectId: "factory-sim01v",
+  storageBucket: "factory-sim01v.appspot.com",
+  messagingSenderId: "818674298880",
+  appId: "1:818674298880:web:95307171220da8bd8d28e5"
+};
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const $ = (id) => document.getElementById(id);
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+let currentTeamId = localStorage.getItem('currentTeam') || '';
+let countdownInterval = null;
+
+function showView(id){ document.querySelectorAll('.view').forEach(v=>v.classList.remove('active')); $(id).classList.add('active'); window.scrollTo({top:0,behavior:'smooth'}); }
+async function isProgramOpen(){ const d=await db.collection('config').doc('global').get(); return !d.exists || d.data().open===true; }
+function logout(){ localStorage.removeItem('currentTeam'); currentTeamId=''; location.reload(); }
+async function login(){ const teamId=$('teamId').value.trim(); const pw=$('teamPw').value.trim(); if(!teamId||!pw) return $('loginMsg').innerText='팀 ID와 비밀번호를 입력하세요.'; if(!(await isProgramOpen())) return showView('blockedView'); const doc=await db.collection('teams').doc(teamId).get(); if(!doc.exists) return $('loginMsg').innerText='존재하지 않는 팀입니다.'; if((doc.data().password||'')!==pw) return $('loginMsg').innerText='비밀번호가 일치하지 않습니다.'; currentTeamId=teamId; localStorage.setItem('currentTeam',teamId); await goLobby(); }
+async function goLobby(){ if(!currentTeamId) return showView('authView'); if(!(await isProgramOpen())) return showView('blockedView'); $('logoutBtn').classList.remove('hidden'); $('lobbyTitle').innerText=`${currentTeamId} 힌트 대기실`; $('teamStatus').innerText=`팀: ${currentTeamId}`; await refreshHintLog(); showView('lobbyView'); }
+function showCodeView(){ $('hintCodeInput').value=''; $('codeMessage').innerText=''; showView('codeView'); }
+async function refreshHintLog(){ const snap=await db.collection('code_hint_views').doc(currentTeamId).get(); const data=snap.exists ? snap.data() : {}; const codes=Object.keys(data); $('hintStatus').innerText=`열람 힌트: ${codes.length}개`; $('metricHints').innerText=`${codes.length}개`; let html='<table><thead><tr><th>코드</th><th>Trouble</th><th>제목</th><th>유형</th></tr></thead><tbody>'; if(codes.length===0) html+='<tr><td colspan="4">아직 열람한 힌트가 없습니다.</td></tr>'; codes.sort().forEach(code=>{ const h=data[code]||{}; html+=`<tr><td>${esc(code)}</td><td>${esc(h.troubleId)}</td><td>${esc(h.title)}</td><td>${esc(h.type)}</td></tr>`; }); html+='</tbody></table>'; $('hintLogTable').innerHTML=html; }
+async function submitCode(){ if(!currentTeamId) return alert('먼저 팀 로그인을 해주세요.'); if(!(await isProgramOpen())) return showView('blockedView'); const code=$('hintCodeInput').value.trim().toUpperCase(); if(!code) return $('codeMessage').innerText='힌트 코드를 입력하세요.'; const viewRef=db.collection('code_hint_views').doc(currentTeamId); const viewSnap=await viewRef.get(); const views=viewSnap.exists ? viewSnap.data() : {}; if(views[code]?.viewed){ $('codeMessage').innerText='이미 열람한 힌트입니다. 팀원에게 공유되었는지 확인하세요.'; return; } const hintSnap=await db.collection('codeHints').doc(code).get(); if(!hintSnap.exists){ $('codeMessage').innerText='존재하지 않는 힌트 코드입니다.'; return; } const hint=hintSnap.data(); await viewRef.set({[code]:{viewed:true,troubleId:hint.troubleId||'',factoryId:hint.factoryId||'',title:hint.title||'',type:hint.type||'',startTime:firebase.firestore.FieldValue.serverTimestamp()}},{merge:true}); revealHint(code,hint); }
+async function revealHint(code,hint){ $('hintCodeLabel').innerText=code; $('hintTitle').innerText=hint.title || '힌트'; $('hintDescription').innerText=`${hint.troubleId || ''} · ${hint.type || '힌트'} · ${hint.description || ''}`; $('hintText').innerText=hint.text || ''; const img=$('hintImage'); if(hint.imageUrl){ img.src=hint.imageUrl; img.classList.remove('hidden'); } else { img.classList.add('hidden'); img.removeAttribute('src'); } showView('revealView'); await startHintTimer(Number(hint.duration || 45)); }
+async function startHintTimer(seconds){ clearInterval(countdownInterval); const timerEnabledSnap=await db.collection('config').doc('hintTimer').get(); const enabled=timerEnabledSnap.exists && timerEnabledSnap.data().enabled===true; if(!enabled){ $('hintTimer').innerText='무제한'; return; } let remain=seconds; const render=()=>{ $('hintTimer').innerText=`${remain}초`; $('hintTimer').classList.toggle('danger', remain<=10); if(remain<=0){ clearInterval(countdownInterval); alert('힌트 열람 시간이 종료되었습니다.'); backToLobby(); } remain--; }; render(); countdownInterval=setInterval(render,1000); }
+async function backToLobby(){ clearInterval(countdownInterval); await goLobby(); }
+document.addEventListener('DOMContentLoaded', async()=>{ if(currentTeamId) await goLobby(); });
+  </script>
+</body>
+</html>

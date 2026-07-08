@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>공장 트러블 대응반 | Admin</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#" onclick="showAdminHome(); return false;">
+        <span class="brand-mark">AD</span>
+        <span>관리자 통합 패널<small>운영 제어 · Trouble · 힌트 · 디브리핑</small></span>
+      </a>
+      <div id="adminNav" class="nav-pills hidden">
+        <button onclick="showAdminHome()">운영 홈</button>
+        <button onclick="location.href='index.html'">플레이어</button>
+        <button onclick="location.href='hint.html'">힌트</button>
+        <button class="danger" onclick="adminLogout()">로그아웃</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <section id="adminLoginView" class="view active">
+      <div class="stepper">
+        <div class="step active"><div class="num">1</div><strong>관리자 인증</strong><span>운영자 로그인</span></div>
+        <div class="step"><div class="num">2</div><strong>운영 홈</strong><span>상태 확인</span></div>
+        <div class="step"><div class="num">3</div><strong>콘텐츠 관리</strong><span>Trouble/힌트</span></div>
+        <div class="step"><div class="num">4</div><strong>결과 리뷰</strong><span>로그/디브리핑</span></div>
+      </div>
+      <div class="hero">
+        <div class="hero-card">
+          <span class="kicker">🛠️ Operator Mode</span>
+          <h1>운영 순서를<br>다시 잡았습니다.</h1>
+          <p>관리자는 로그인 후 운영 홈에서 프로그램 상태를 먼저 확인하고, 필요한 관리 메뉴로 이동합니다. 모든 기능을 첫 화면에 쏟아내지 않습니다.</p>
+        </div>
+        <div class="hero-card hero-side">
+          <div class="metric-list">
+            <div class="metric"><div class="metric-label">파일 구조</div><div class="metric-value">3+CSS</div></div>
+            <div class="metric"><div class="metric-label">샘플 사건</div><div class="metric-value">3건</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>관리자 로그인</h2>
+        <p>파일럿용 기본값은 <b class="mono">admin / admin</b>입니다. 실제 운영 전에는 Firebase Auth와 보안 규칙 적용이 필요합니다.</p>
+        <div class="form-grid two">
+          <div><label>ID</label><input id="adminId" type="text" value="admin"></div>
+          <div><label>Password</label><input id="adminPw" type="password" value="admin"></div>
+        </div>
+        <div class="btn-row"><button class="primary" onclick="adminLogin()">운영 홈 입장</button></div>
+        <div id="adminLoginMsg" class="footer-note"></div>
+      </div>
+    </section>
+
+    <section id="adminHomeView" class="view">
+      <div class="stepper">
+        <div class="step done"><div class="num">1</div><strong>관리자 인증</strong><span>완료</span></div>
+        <div class="step active"><div class="num">2</div><strong>운영 홈</strong><span>상태 확인</span></div>
+        <div class="step"><div class="num">3</div><strong>콘텐츠 관리</strong><span>메뉴 선택</span></div>
+        <div class="step"><div class="num">4</div><strong>결과 리뷰</strong><span>운영 종료 후</span></div>
+      </div>
+      <div class="hero">
+        <div class="hero-card">
+          <span class="kicker">🎛️ Control Room</span>
+          <h1>운영 홈</h1>
+          <p>먼저 프로그램 상태를 열고, 예시 데이터를 넣은 뒤, 팀/콘텐츠/로그 메뉴로 이동하세요.</p>
+          <div class="status-strip">
+            <span class="status-item" id="programStateText">프로그램: 확인 중</span>
+            <span class="status-item" id="hintTimerStateText">힌트 타이머: 확인 중</span>
+            <span class="status-item" id="summaryTeams">팀: -</span>
+            <span class="status-item" id="summaryTroubles">Trouble: -</span>
+          </div>
+        </div>
+        <div class="hero-card hero-side">
+          <div class="metric-list">
+            <div class="metric"><div class="metric-label">운영 순서</div><div class="metric-value">상태→콘텐츠</div></div>
+            <div class="metric"><div class="metric-label">디브리핑</div><div class="metric-value">로그 기반</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-box">
+        <div class="flow-title"><div><h2>운영자가 먼저 할 일</h2><p>아래 순서대로 진행하면 현장에서 덜 헷갈립니다.</p></div><span class="badge yellow">ADMIN FLOW</span></div>
+        <div class="grid four">
+          <div class="action-card" onclick="toggleProgram(true)"><div class="big-icon">🟢</div><h2>1. 프로그램 시작</h2><p>참가자 로그인과 힌트 열람을 허용합니다.</p></div>
+          <div class="action-card" onclick="seedSampleData()"><div class="big-icon">🏭</div><h2>2. 예시 데이터 생성</h2><p>화학공장 Trouble 3건과 힌트 18개를 넣습니다.</p></div>
+          <div class="action-card" onclick="showPane('teamsPane')"><div class="big-icon">👥</div><h2>3. 팀 확인</h2><p>팀 등록/점수 초기화/삭제를 관리합니다.</p></div>
+          <div class="action-card" onclick="showPane('logsPane')"><div class="big-icon">📋</div><h2>4. 결과 리뷰</h2><p>제출 기록과 힌트 열람 순서를 확인합니다.</p></div>
+        </div>
+      </div>
+
+      <div class="grid two">
+        <div class="card">
+          <h2>프로그램 제어</h2>
+          <p>시작 상태가 아니면 플레이어 로그인과 힌트 열람이 막힙니다.</p>
+          <div class="btn-row"><button class="primary" onclick="toggleProgram(true)">프로그램 시작</button><button class="danger" onclick="toggleProgram(false)">프로그램 중단</button><button class="ghost" onclick="toggleHintTimer()">힌트 타이머 전환</button></div>
+        </div>
+        <div class="card">
+          <h2>운영 기록 초기화</h2>
+          <p>파일럿 재운영 전 팀 손실비용, 제출 결과, 힌트 열람 로그, 세션을 초기화합니다.</p>
+          <div class="btn-row"><button class="danger" onclick="resetRunData()">운영 기록 초기화</button></div>
+        </div>
+      </div>
+
+      <div class="admin-layout" style="margin-top:18px;">
+        <aside class="side-menu">
+          <button class="ghost" onclick="showPane('teamsPane')">👥 팀 관리</button>
+          <button class="ghost" onclick="showPane('factoriesPane')">🏭 공장 관리</button>
+          <button class="ghost" onclick="showPane('troublesPane')">🚨 Trouble 관리</button>
+          <button class="ghost" onclick="showPane('hintsPane')">🔐 힌트 관리</button>
+          <button class="ghost" onclick="showPane('logsPane')">📋 로그/디브리핑</button>
+        </aside>
+        <section>
+          <div id="teamsPane" class="admin-pane active">
+            <div class="card">
+              <div class="card-header"><div><h2>팀 관리</h2><p>팀을 만들고 손실비용을 초기화합니다.</p></div><span class="badge">TEAMS</span></div>
+              <div class="form-grid three">
+                <div><label>팀 ID</label><input id="newTeamId" placeholder="TEAM01"></div>
+                <div><label>비밀번호</label><input id="newTeamPw" placeholder="1234"></div>
+                <div style="display:flex; align-items:end;"><button class="primary" onclick="addTeam()">팀 추가</button></div>
+              </div>
+              <div id="teamTable" class="table-wrap" style="margin-top:16px;"></div>
+            </div>
+          </div>
+
+          <div id="factoriesPane" class="admin-pane">
+            <div class="card">
+              <div class="card-header"><div><h2>공장 관리</h2><p>사건이 소속될 가상 공장을 관리합니다.</p></div><span class="badge">FACTORY</span></div>
+              <div class="form-grid three">
+                <div><label>공장 ID</label><input id="factoryId" placeholder="AURORA"></div>
+                <div><label>공장명</label><input id="factoryName" placeholder="AURORA-RESIN"></div>
+                <div style="display:flex; align-items:end;"><button class="primary" onclick="saveFactory()">저장</button></div>
+              </div>
+              <div id="factoryTable" class="table-wrap" style="margin-top:16px;"></div>
+            </div>
+          </div>
+
+          <div id="troublesPane" class="admin-pane">
+            <div class="card">
+              <div class="card-header"><div><h2>Trouble 관리</h2><p>간단 편집용입니다. 복잡한 시나리오는 예시 데이터 생성 후 Firestore에서 세부 보정해도 됩니다.</p></div><span class="badge red">TROUBLE</span></div>
+              <div class="form-grid three">
+                <div><label>문서 ID</label><input id="troubleId" placeholder="TR01"></div>
+                <div><label>사건 코드</label><input id="troubleCode" placeholder="TR01"></div>
+                <div><label>공장 ID</label><input id="troubleFactoryId" placeholder="AURORA"></div>
+              </div>
+              <div class="form-grid two" style="margin-top:12px;">
+                <div><label>제목</label><input id="troubleTitle" placeholder="2번 반응기 온도 상승"></div>
+                <div><label>부제</label><input id="troubleSubtitle" placeholder="냉각수 계통 이상 의심"></div>
+              </div>
+              <div style="margin-top:12px;"><label>상황 브리핑</label><textarea id="troubleScenario"></textarea></div>
+              <div class="form-grid four" style="margin-top:12px;">
+                <div><label>제한시간(초)</label><input id="troubleTime" type="number" value="900"></div>
+                <div><label>힌트비용</label><input id="troubleHintCost" type="number" value="30"></div>
+                <div><label>오판패널티</label><input id="troubleCausePenalty" type="number" value="800"></div>
+                <div><label>시간초과패널티</label><input id="troubleTimeoutPenalty" type="number" value="9999"></div>
+              </div>
+              <div class="notice info">선택지는 예시 데이터 구조를 기준으로 기본 4개가 자동 생성됩니다. 세부 선택지 수정은 아래 목록에서 기존 항목을 불러온 뒤 JSON을 조정하거나 Firestore에서 보정하세요.</div>
+              <div style="margin-top:12px;"><label>선택지 JSON</label><textarea id="troubleJson" style="min-height:210px;"></textarea></div>
+              <div class="btn-row"><button class="primary" onclick="saveTrouble()">Trouble 저장</button><button class="ghost" onclick="clearTroubleForm()">입력 초기화</button><button class="secondary" onclick="seedSampleData()">예시 3건 생성/갱신</button></div>
+              <div id="troubleTable" class="table-wrap" style="margin-top:16px;"></div>
+            </div>
+          </div>
+
+          <div id="hintsPane" class="admin-pane">
+            <div class="card">
+              <div class="card-header"><div><h2>힌트 관리</h2><p>QR/힌트카드에 인쇄할 코드를 만들고 내용을 등록합니다.</p></div><span class="badge green">HINT</span></div>
+              <div class="form-grid four">
+                <div><label>힌트 코드</label><input id="hintCode" placeholder="R1-01"></div>
+                <div><label>Trouble ID</label><input id="hintTroubleId" placeholder="TR01"></div>
+                <div><label>공장 ID</label><input id="hintFactoryId" placeholder="AURORA"></div>
+                <div><label>노출 시간(초)</label><input id="hintDuration" type="number" value="45"></div>
+              </div>
+              <div class="form-grid three" style="margin-top:12px;">
+                <div><label>힌트 제목</label><input id="hintTitle" placeholder="DCS 트렌드"></div>
+                <div><label>힌트 유형</label><select id="hintType"><option>결정적 힌트</option><option>보조 힌트</option><option>노이즈 힌트</option><option>비용 힌트</option><option>위험 힌트</option></select></div>
+                <div><label>이미지 URL/Base64</label><input id="hintImageUrl" placeholder="선택"></div>
+              </div>
+              <div style="margin-top:12px;"><label>힌트 설명</label><input id="hintDescription" placeholder="교육장 카드 위치 또는 요약"></div>
+              <div style="margin-top:12px;"><label>힌트 내용</label><textarea id="hintText"></textarea></div>
+              <div class="btn-row"><button class="primary" onclick="saveHint()">힌트 저장</button><button class="ghost" onclick="clearHintForm()">입력 초기화</button></div>
+              <div id="hintTable" class="table-wrap" style="margin-top:16px;"></div>
+            </div>
+          </div>
+
+          <div id="logsPane" class="admin-pane">
+            <div class="card">
+              <div class="card-header"><div><h2>로그 / 디브리핑</h2><p>팀별 결과와 힌트 열람 순서를 확인합니다.</p></div><span class="badge yellow">REVIEW</span></div>
+              <div class="btn-row"><button class="primary" onclick="loadLogs()">로그 새로고침</button></div>
+              <h3 style="margin-top:18px;">팀 랭킹</h3><div id="adminRanking" class="table-wrap"></div>
+              <h3 style="margin-top:18px;">제출 결과</h3><div id="resultLogs" class="table-wrap"></div>
+              <h3 style="margin-top:18px;">힌트 열람 로그</h3><div id="hintLogs" class="table-wrap"></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+  <script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCCxRR6hXvk9Z17eK8H_Vov_TbGX8LzvDs",
+  authDomain: "factory-sim01v.firebaseapp.com",
+  projectId: "factory-sim01v",
+  storageBucket: "factory-sim01v.appspot.com",
+  messagingSenderId: "818674298880",
+  appId: "1:818674298880:web:95307171220da8bd8d28e5"
+};
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const $ = (id) => document.getElementById(id);
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const money = (n) => `${Number(n || 0).toLocaleString()}만원`;
+
+function showView(id) { document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); $(id).classList.add('active'); window.scrollTo({top:0, behavior:'smooth'}); }
+function showPane(id) { document.querySelectorAll('.admin-pane').forEach(p => p.classList.remove('active')); $(id).classList.add('active'); if(id==='teamsPane') loadTeams(); if(id==='factoriesPane') loadFactories(); if(id==='troublesPane') loadTroubles(); if(id==='hintsPane') loadHints(); if(id==='logsPane') loadLogs(); }
+function adminLogin() { const id=$('adminId').value.trim(); const pw=$('adminPw').value.trim(); if(id==='admin' && pw==='admin'){ localStorage.setItem('adminAuth','true'); $('adminNav').classList.remove('hidden'); showAdminHome(); } else { $('adminLoginMsg').innerText='관리자 정보가 일치하지 않습니다.'; } }
+function adminLogout(){ localStorage.removeItem('adminAuth'); location.reload(); }
+async function showAdminHome(){ if(localStorage.getItem('adminAuth')!=='true') return showView('adminLoginView'); $('adminNav').classList.remove('hidden'); await refreshSummary(); showView('adminHomeView'); }
+async function refreshSummary(){ const g=await db.collection('config').doc('global').get(); const h=await db.collection('config').doc('hintTimer').get(); $('programStateText').innerText=`프로그램: ${(g.exists&&g.data().open===true)?'실행 중':'중단됨'}`; $('hintTimerStateText').innerText=`힌트 타이머: ${(h.exists&&h.data().enabled===true)?'ON':'OFF'}`; const teams=await db.collection('teams').get(); const troubles=await db.collection('troubles').get(); $('summaryTeams').innerText=`팀: ${teams.size}`; $('summaryTroubles').innerText=`Trouble: ${troubles.size}`; }
+async function toggleProgram(open){ await db.collection('config').doc('global').set({open},{merge:true}); await refreshSummary(); alert(open?'프로그램을 시작했습니다.':'프로그램을 중단했습니다.'); }
+async function toggleHintTimer(){ const d=await db.collection('config').doc('hintTimer').get(); const enabled=!(d.exists&&d.data().enabled===true); await db.collection('config').doc('hintTimer').set({enabled},{merge:true}); await refreshSummary(); }
+async function resetRunData(){ if(!confirm('팀 점수, 제출 결과, 힌트 열람 로그, 진행 세션을 초기화할까요?')) return; const batches=[]; async function delCol(name){ const snap=await db.collection(name).get(); let batch=db.batch(); let count=0; snap.forEach(doc=>{ batch.delete(doc.ref); count++; if(count>=400){ batches.push(batch.commit()); batch=db.batch(); count=0; } }); if(count>0) batches.push(batch.commit()); }
+  await delCol('teamTroubleResults'); await delCol('teamTroubleSessions'); await delCol('code_hint_views'); await Promise.all(batches); const teams=await db.collection('teams').get(); const batch=db.batch(); teams.forEach(doc=>batch.set(doc.ref,{loss:0,score:0},{merge:true})); await batch.commit(); await refreshSummary(); alert('운영 기록을 초기화했습니다.'); }
+
+async function addTeam(){ const id=$('newTeamId').value.trim(); const pw=$('newTeamPw').value.trim(); if(!id||!pw) return alert('팀 ID와 비밀번호를 입력하세요.'); await db.collection('teams').doc(id).set({password:pw,loss:0,score:0,createdAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}); $('newTeamId').value=''; $('newTeamPw').value=''; loadTeams(); }
+async function resetTeam(id){ await db.collection('teams').doc(id).set({loss:0,score:0},{merge:true}); const r=await db.collection('teamTroubleResults').where('teamId','==',id).get(); const b=db.batch(); r.forEach(d=>b.delete(d.ref)); await b.commit(); loadTeams(); }
+async function deleteTeam(id){ if(!confirm(`${id} 팀을 삭제할까요?`)) return; await db.collection('teams').doc(id).delete(); loadTeams(); }
+async function loadTeams(){ const snap=await db.collection('teams').get(); const teams=snap.docs.map(doc=>({id:doc.id,...doc.data(),lossValue:Number(doc.data().loss??doc.data().score??0)})); teams.sort((a,b)=>a.lossValue-b.lossValue); let html='<table><thead><tr><th>팀</th><th>총 손실</th><th>관리</th></tr></thead><tbody>'; teams.forEach(t=>{ html+=`<tr><td>${esc(t.id)}</td><td>${money(t.lossValue)}</td><td><button class="ghost" onclick="resetTeam('${esc(t.id)}')">초기화</button> <button class="danger" onclick="deleteTeam('${esc(t.id)}')">삭제</button></td></tr>`; }); html+='</tbody></table>'; $('teamTable').innerHTML=html; }
+async function saveFactory(){ const id=$('factoryId').value.trim(); const name=$('factoryName').value.trim(); if(!id||!name) return alert('공장 ID와 공장명을 입력하세요.'); await db.collection('factories').doc(id).set({id,name},{merge:true}); $('factoryId').value=''; $('factoryName').value=''; loadFactories(); }
+async function deleteFactory(id){ if(!confirm(`${id} 공장을 삭제할까요?`)) return; await db.collection('factories').doc(id).delete(); loadFactories(); }
+async function loadFactories(){ const snap=await db.collection('factories').get(); let html='<table><thead><tr><th>ID</th><th>공장명</th><th>관리</th></tr></thead><tbody>'; snap.forEach(doc=>{ const f=doc.data(); html+=`<tr><td>${esc(doc.id)}</td><td>${esc(f.name)}</td><td><button class="danger" onclick="deleteFactory('${esc(doc.id)}')">삭제</button></td></tr>`; }); html+='</tbody></table>'; $('factoryTable').innerHTML=html; }
+function defaultChoiceJson(){ return JSON.stringify({ correctCauseId:'C', optimalActionId:'C', causes:[{id:'A',text:'센서 오작동',rationale:'계측 이상 가능성'},{id:'B',text:'펌프 성능 저하',rationale:'회전기계 이상 가능성'},{id:'C',text:'스트레이너 막힘',rationale:'유량 저하와 압력차 근거'},{id:'D',text:'교반 불량',rationale:'반응기 내부 이상 가능성'}], actions:[{id:'A',text:'센서 교체',cost:180,timeLoss:120,safetyPenalty:0,qualityLoss:80,feedback:'센서 문제가 아니라면 불필요한 조치입니다.'},{id:'B',text:'펌프 교체',cost:650,timeLoss:480,safetyPenalty:0,qualityLoss:120,feedback:'과잉 정비로 손실이 커졌습니다.'},{id:'C',text:'스트레이너 세척 후 재가동',cost:160,timeLoss:120,safetyPenalty:0,qualityLoss:40,feedback:'핵심 원인에 맞춘 적절한 조치입니다.'},{id:'D',text:'긴급 셧다운',cost:300,timeLoss:900,safetyPenalty:0,qualityLoss:320,feedback:'안전 측면에서는 보수적이나 과잉조치 가능성이 있습니다.'}]}, null, 2); }
+function clearTroubleForm(){ ['troubleId','troubleCode','troubleFactoryId','troubleTitle','troubleSubtitle','troubleScenario'].forEach(id=>$(id).value=''); $('troubleTime').value=900; $('troubleHintCost').value=30; $('troubleCausePenalty').value=800; $('troubleTimeoutPenalty').value=9999; $('troubleJson').value=defaultChoiceJson(); }
+async function saveTrouble(){ const id=$('troubleId').value.trim(); if(!id) return alert('문서 ID를 입력하세요.'); let extra={}; try{ extra=JSON.parse($('troubleJson').value||'{}'); } catch(e){ return alert('선택지 JSON 형식이 올바르지 않습니다.'); } const data={ id, code:$('troubleCode').value.trim()||id, factoryId:$('troubleFactoryId').value.trim(), factoryName:$('troubleFactoryId').value.trim(), title:$('troubleTitle').value.trim(), subtitle:$('troubleSubtitle').value.trim(), scenario:$('troubleScenario').value.trim(), timeLimit:Number($('troubleTime').value||900), hintCost:Number($('troubleHintCost').value||30), causePenalty:Number($('troubleCausePenalty').value||800), timeoutPenalty:Number($('troubleTimeoutPenalty').value||9999), ...extra, updatedAt:firebase.firestore.FieldValue.serverTimestamp() }; await db.collection('troubles').doc(id).set(data,{merge:true}); alert('Trouble을 저장했습니다.'); loadTroubles(); }
+async function editTrouble(id){ const doc=await db.collection('troubles').doc(id).get(); const t=doc.data(); $('troubleId').value=id; $('troubleCode').value=t.code||id; $('troubleFactoryId').value=t.factoryId||''; $('troubleTitle').value=t.title||''; $('troubleSubtitle').value=t.subtitle||''; $('troubleScenario').value=t.scenario||''; $('troubleTime').value=t.timeLimit||900; $('troubleHintCost').value=t.hintCost||30; $('troubleCausePenalty').value=t.causePenalty||800; $('troubleTimeoutPenalty').value=t.timeoutPenalty||9999; $('troubleJson').value=JSON.stringify({correctCauseId:t.correctCauseId,optimalActionId:t.optimalActionId,causes:t.causes||[],actions:t.actions||[]},null,2); window.scrollTo({top:0,behavior:'smooth'}); }
+async function deleteTrouble(id){ if(!confirm(`${id} Trouble을 삭제할까요?`)) return; await db.collection('troubles').doc(id).delete(); loadTroubles(); }
+async function loadTroubles(){ if(!$('troubleJson').value) $('troubleJson').value=defaultChoiceJson(); const snap=await db.collection('troubles').get(); let html='<table><thead><tr><th>코드</th><th>제목</th><th>공장</th><th>관리</th></tr></thead><tbody>'; snap.forEach(doc=>{ const t=doc.data(); html+=`<tr><td>${esc(t.code||doc.id)}</td><td>${esc(t.title)}</td><td>${esc(t.factoryId)}</td><td><button class="ghost" onclick="editTrouble('${esc(doc.id)}')">불러오기</button> <button class="danger" onclick="deleteTrouble('${esc(doc.id)}')">삭제</button></td></tr>`; }); html+='</tbody></table>'; $('troubleTable').innerHTML=html; }
+function clearHintForm(){ ['hintCode','hintTroubleId','hintFactoryId','hintTitle','hintDescription','hintText','hintImageUrl'].forEach(id=>$(id).value=''); $('hintDuration').value=45; }
+async function saveHint(){ const code=$('hintCode').value.trim().toUpperCase(); if(!code) return alert('힌트 코드를 입력하세요.'); const data={ code, troubleId:$('hintTroubleId').value.trim(), factoryId:$('hintFactoryId').value.trim(), title:$('hintTitle').value.trim(), type:$('hintType').value, description:$('hintDescription').value.trim(), text:$('hintText').value.trim(), imageUrl:$('hintImageUrl').value.trim(), duration:Number($('hintDuration').value||45), updatedAt:firebase.firestore.FieldValue.serverTimestamp() }; await db.collection('codeHints').doc(code).set(data,{merge:true}); alert('힌트를 저장했습니다.'); loadHints(); }
+async function editHint(code){ const doc=await db.collection('codeHints').doc(code).get(); const h=doc.data(); $('hintCode').value=code; $('hintTroubleId').value=h.troubleId||''; $('hintFactoryId').value=h.factoryId||''; $('hintTitle').value=h.title||''; $('hintType').value=h.type||'보조 힌트'; $('hintDescription').value=h.description||''; $('hintText').value=h.text||''; $('hintImageUrl').value=h.imageUrl||''; $('hintDuration').value=h.duration||45; }
+async function deleteHint(code){ if(!confirm(`${code} 힌트를 삭제할까요?`)) return; await db.collection('codeHints').doc(code).delete(); loadHints(); }
+async function loadHints(){ const snap=await db.collection('codeHints').get(); let html='<table><thead><tr><th>코드</th><th>Trouble</th><th>제목</th><th>유형</th><th>관리</th></tr></thead><tbody>'; snap.forEach(doc=>{ const h=doc.data(); html+=`<tr><td>${esc(doc.id)}</td><td>${esc(h.troubleId)}</td><td>${esc(h.title)}</td><td>${esc(h.type)}</td><td><button class="ghost" onclick="editHint('${esc(doc.id)}')">불러오기</button> <button class="danger" onclick="deleteHint('${esc(doc.id)}')">삭제</button></td></tr>`; }); html+='</tbody></table>'; $('hintTable').innerHTML=html; }
+async function loadLogs(){ const teamsSnap=await db.collection('teams').get(); const teams=teamsSnap.docs.map(doc=>({id:doc.id,...doc.data(),lossValue:Number(doc.data().loss??doc.data().score??0)})); teams.sort((a,b)=>a.lossValue-b.lossValue); let rh='<table><thead><tr><th>순위</th><th>팀</th><th>총 손실</th></tr></thead><tbody>'; let i=1; teams.forEach(t=>{ rh+=`<tr><td>${i++}</td><td>${esc(t.id)}</td><td>${money(t.lossValue)}</td></tr>`;}); rh+='</tbody></table>'; $('adminRanking').innerHTML=rh;
+  const results=await db.collection('teamTroubleResults').get(); let res='<table><thead><tr><th>팀</th><th>사건</th><th>원인</th><th>조치</th><th>힌트</th><th>손실</th></tr></thead><tbody>'; results.forEach(doc=>{ const r=doc.data(); res+=`<tr><td>${esc(r.teamId)}</td><td>${esc(r.troubleCode)}<br>${esc(r.troubleTitle)}</td><td>${esc(r.causeText)}<br>${r.causeCorrect?'정답':'오판'}</td><td>${esc(r.actionText)}<br>${r.actionOptimal?'최적':'검토'}</td><td>${Number(r.hintCount||0)}개</td><td>${money(r.totalLoss)}</td></tr>`; }); res+='</tbody></table>'; $('resultLogs').innerHTML=res;
+  const views=await db.collection('code_hint_views').get(); let hv='<table><thead><tr><th>팀</th><th>힌트 코드</th><th>Trouble</th><th>제목</th><th>유형</th></tr></thead><tbody>'; views.forEach(doc=>{ const team=doc.id; const data=doc.data()||{}; Object.entries(data).forEach(([code,v])=>{ hv+=`<tr><td>${esc(team)}</td><td>${esc(code)}</td><td>${esc(v.troubleId)}</td><td>${esc(v.title)}</td><td>${esc(v.type)}</td></tr>`; }); }); hv+='</tbody></table>'; $('hintLogs').innerHTML=hv; }
+
+function troubleData(){ return [
+{id:'TR01', code:'TR01', factoryId:'AURORA', factoryName:'AURORA-RESIN', title:'2번 반응기 온도 상승', subtitle:'냉각수 유량 저하와 품질 이상 조짐', scenario:'AURORA-RESIN 공장 2번 반응기에서 온도 상승 알람이 발생했습니다. 10:18부터 반응기 온도가 상승했고, 10:25 생산팀은 제품 점도 상승 가능성을 보고했습니다. 팀은 힌트를 수집해 원인을 파악하고 조치안을 결정해야 합니다.', timeLimit:900, hintCost:30, causePenalty:800, timeoutPenalty:9999, correctCauseId:'C', optimalActionId:'C', causes:[{id:'A',text:'온도센서 오작동',rationale:'계측 이상 가능성은 있으나 다른 공정 데이터와 비교 필요'},{id:'B',text:'냉각수 펌프 성능 저하',rationale:'유량 저하 시 흔한 원인이나 정비 이력 확인 필요'},{id:'C',text:'냉각수 라인 스트레이너 막힘',rationale:'유량 감소와 전후단 압력차 증가가 맞물림'},{id:'D',text:'반응기 교반 불량',rationale:'온도 불균일 가능성이 있으나 유량 데이터와 비교 필요'}], actions:[{id:'A',text:'온도센서 교체',cost:180,timeLoss:120,safetyPenalty:0,qualityLoss:80,feedback:'센서 교정 이력만 보고 판단하면 불필요한 조치로 이어집니다.'},{id:'B',text:'냉각수 펌프 교체',cost:650,timeLoss:480,safetyPenalty:0,qualityLoss:120,feedback:'펌프는 최근 점검 이력이 있어 과잉 정비 가능성이 큽니다.'},{id:'C',text:'스트레이너 점검·세척 후 재가동',cost:160,timeLoss:120,safetyPenalty:0,qualityLoss:40,feedback:'압력차와 유량 저하를 근거로 핵심 원인에 맞춘 조치입니다.'},{id:'D',text:'반응기 긴급 셧다운',cost:300,timeLoss:900,safetyPenalty:0,qualityLoss:320,feedback:'안전 우선 판단이지만 현재 정보 기준으로는 과잉조치입니다.'}]},
+{id:'TR02', code:'TR02', factoryId:'NOVA', factoryName:'NOVA-DISTILL', title:'증류탑 상부 압력 상승', subtitle:'콘덴서 부하 증가와 환류 불안정', scenario:'NOVA-DISTILL 공장의 C-301 증류탑 상부 압력이 평소보다 높게 유지되고 있습니다. 환류 드럼 레벨이 흔들리고, 제품 순도도 경계값에 접근했습니다. 팀은 압력 상승 원인과 최적 조치안을 판단해야 합니다.', timeLimit:900, hintCost:30, causePenalty:900, timeoutPenalty:9999, correctCauseId:'B', optimalActionId:'B', causes:[{id:'A',text:'탑 내부 포밍 발생',rationale:'압력 상승 원인 중 하나이나 레벨/유량 패턴 확인 필요'},{id:'B',text:'콘덴서 냉각수 제어밸브 고착',rationale:'냉각수 유량과 밸브 개도율 불일치가 핵심'},{id:'C',text:'리보일러 과열 운전',rationale:'열부하 증가 가능성이나 스팀 데이터 확인 필요'},{id:'D',text:'압력 트랜스미터 불량',rationale:'계측 이슈 가능성은 있으나 현장 압력계와 비교 필요'}], actions:[{id:'A',text:'소포제 긴급 투입',cost:120,timeLoss:80,safetyPenalty:40,qualityLoss:180,feedback:'포밍으로 단정하면 품질 손실을 키울 수 있습니다.'},{id:'B',text:'냉각수 제어밸브 수동 전환 및 정비 호출',cost:220,timeLoss:160,safetyPenalty:0,qualityLoss:70,feedback:'밸브 고착을 우회하면서 압력 안정화를 시도하는 적절한 조치입니다.'},{id:'C',text:'리보일러 스팀 즉시 차단',cost:160,timeLoss:500,safetyPenalty:20,qualityLoss:250,feedback:'원인과 맞지 않으면 생산 안정성을 크게 해칠 수 있습니다.'},{id:'D',text:'압력계 교체 후 계속 운전',cost:100,timeLoss:60,safetyPenalty:260,qualityLoss:250,feedback:'실제 압력 상승을 계측 문제로 치부하면 안전 리스크가 커집니다.'}]},
+{id:'TR03', code:'TR03', factoryId:'LUMEN', factoryName:'LUMEN-DRY', title:'건조 후 제품 수분 상승', subtitle:'스팀 사용량 증가와 건조 효율 저하', scenario:'LUMEN-DRY 공정에서 최종 제품 수분이 기준 상한에 접근했습니다. 건조기 스팀 사용량은 늘었지만 건조 효율은 오히려 떨어지고 있습니다. 팀은 설비 이상과 조치 우선순위를 판단해야 합니다.', timeLimit:900, hintCost:30, causePenalty:800, timeoutPenalty:9999, correctCauseId:'D', optimalActionId:'D', causes:[{id:'A',text:'원료 수분 과다',rationale:'제품 수분 상승의 흔한 원인이나 입고 데이터 확인 필요'},{id:'B',text:'건조기 온도센서 오차',rationale:'표시 온도와 실제 온도의 차이 가능성'},{id:'C',text:'배기팬 성능 저하',rationale:'습기 배출 저하 가능성'},{id:'D',text:'스팀트랩 고장으로 응축수 배출 불량',rationale:'스팀 사용량 증가와 열전달 저하를 함께 설명'}], actions:[{id:'A',text:'원료 투입 중단 후 전량 대기',cost:200,timeLoss:520,safetyPenalty:0,qualityLoss:260,feedback:'원료 데이터가 정상이라면 불필요한 생산 지연입니다.'},{id:'B',text:'온도센서 교정',cost:90,timeLoss:80,safetyPenalty:0,qualityLoss:190,feedback:'센서만 조치하면 열전달 문제를 해결하지 못합니다.'},{id:'C',text:'배기팬 교체',cost:500,timeLoss:360,safetyPenalty:0,qualityLoss:180,feedback:'일부 가능성은 있으나 스팀/응축수 힌트를 무시한 과잉조치입니다.'},{id:'D',text:'스팀트랩 점검·교체 및 응축수 라인 배수',cost:180,timeLoss:140,safetyPenalty:0,qualityLoss:60,feedback:'스팀 사용량 증가와 건조 효율 저하를 동시에 해결하는 최적 조치입니다.'}]}
+];}
+function hintData(){ return [
+['R1-01','TR01','AURORA','DCS 트렌드','결정적 힌트','반응기 온도 상승 7분 전부터 냉각수 유량이 서서히 감소했습니다.'],['R1-02','TR01','AURORA','압력 차이 사진','결정적 힌트','스트레이너 전단/후단 압력 차이가 평소보다 크게 증가했습니다.'],['R1-03','TR01','AURORA','작업자 진술','보조 힌트','어제 라인 세척 후 초기 운전 때 배관에서 평소와 다른 소음이 있었습니다.'],['R1-04','TR01','AURORA','정비 이력','보조 힌트','냉각수 펌프는 2주 전 정기점검을 완료했고 이상 징후가 없었습니다.'],['R1-05','TR01','AURORA','품질 데이터','비용 힌트','온도 상승이 지속되면 제품 점도 상승으로 재작업 비용이 발생할 수 있습니다.'],['R1-06','TR01','AURORA','센서 교정 이력','노이즈 힌트','온도센서 교정 주기가 1개월 지났습니다. 단, 예비 센서와 표시값 차이는 작습니다.'],
+['D2-01','TR02','NOVA','밸브 개도율','결정적 힌트','냉각수 제어밸브 개도율은 80%로 표시되지만 실제 유량 증가는 거의 없습니다.'],['D2-02','TR02','NOVA','현장 압력계','보조 힌트','현장 압력계도 DCS와 유사하게 높은 압력을 표시합니다.'],['D2-03','TR02','NOVA','냉각수 온도','보조 힌트','냉각수 공급 온도는 정상 범위입니다.'],['D2-04','TR02','NOVA','제품 순도','비용 힌트','압력 상승이 길어지면 상부 제품 순도 이탈 가능성이 커집니다.'],['D2-05','TR02','NOVA','포밍 검사','노이즈 힌트','샘플에서 거품 흔적은 뚜렷하지 않습니다.'],['D2-06','TR02','NOVA','스팀 유량','보조 힌트','리보일러 스팀 유량은 최근 2시간 동안 큰 변동이 없습니다.'],
+['Q3-01','TR03','LUMEN','스팀 사용량','결정적 힌트','건조기 스팀 사용량은 증가했지만 출구 제품 수분은 개선되지 않았습니다.'],['Q3-02','TR03','LUMEN','응축수 라인','결정적 힌트','응축수 배출 라인 온도가 불규칙하고 일부 구간에서 워터해머음이 확인됩니다.'],['Q3-03','TR03','LUMEN','원료 수분','보조 힌트','입고 원료 수분은 최근 3일간 정상 범위입니다.'],['Q3-04','TR03','LUMEN','배기팬 전류','노이즈 힌트','배기팬 전류가 소폭 상승했지만 알람 기준에는 미달합니다.'],['Q3-05','TR03','LUMEN','온도센서 비교','보조 힌트','휴대용 온도계와 설비 표시 온도의 차이는 허용 범위입니다.'],['Q3-06','TR03','LUMEN','품질 비용','비용 힌트','수분 기준을 초과하면 전량 재건조 또는 다운그레이드 판정이 필요합니다.']
+];}
+async function seedSampleData(){ if(!confirm('예시 Trouble 3건과 힌트 18개를 생성/갱신할까요?')) return; const batch=db.batch(); batch.set(db.collection('factories').doc('AURORA'),{id:'AURORA',name:'AURORA-RESIN'},{merge:true}); batch.set(db.collection('factories').doc('NOVA'),{id:'NOVA',name:'NOVA-DISTILL'},{merge:true}); batch.set(db.collection('factories').doc('LUMEN'),{id:'LUMEN',name:'LUMEN-DRY'},{merge:true}); troubleData().forEach(t=>batch.set(db.collection('troubles').doc(t.id),{...t,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true})); hintData().forEach(h=>batch.set(db.collection('codeHints').doc(h[0]),{code:h[0],troubleId:h[1],factoryId:h[2],title:h[3],type:h[4],description:h[3],text:h[5],duration:45,imageUrl:'',updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true})); await batch.commit(); await refreshSummary(); loadTroubles(); loadHints(); alert('예시 데이터 생성/갱신 완료!'); }
+
+document.addEventListener('DOMContentLoaded', async()=>{ clearTroubleForm(); if(localStorage.getItem('adminAuth')==='true'){ $('adminNav').classList.remove('hidden'); await showAdminHome(); } });
+  </script>
+</body>
+</html>

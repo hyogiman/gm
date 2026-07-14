@@ -176,8 +176,10 @@ td .memo{color:var(--dim); font-size:12px}
     <button class="tab" data-pane="paneHints" onclick="tabTo(this)">② 힌트 관리</button>
     <button class="tab" data-pane="panePrint" onclick="tabTo(this)">③ QR 인쇄</button>
     <button class="tab" data-pane="paneTeams" onclick="tabTo(this)">④ 팀 통제</button>
-    <button class="tab" data-pane="paneNotice" onclick="tabTo(this)">⑤ 공지</button>
-    <button class="tab" data-pane="paneLive" onclick="tabTo(this)">⑥ 운영 현황</button>
+    <button class="tab" data-pane="panePhase" onclick="tabTo(this)">⑤ Phase</button>
+    <button class="tab" data-pane="paneQuest" onclick="tabTo(this)">⑥ Quest <span class="badge r" id="pendingBadge" style="display:none">0</span></button>
+    <button class="tab" data-pane="paneNotice" onclick="tabTo(this)">⑦ 공지</button>
+    <button class="tab" data-pane="paneLive" onclick="tabTo(this)">⑧ 운영 현황</button>
   </div>
 
   <!-- ① 게임 설정 -->
@@ -292,7 +294,134 @@ td .memo{color:var(--dim); font-size:12px}
     <div id="teamCtrlList"><div class="empty card">등록된 팀이 없습니다.</div></div>
   </div>
 
-  <!-- ⑤ 공지 -->
+  <!-- ⑤ Phase -->
+  <div class="pane" id="panePhase">
+    <div class="card">
+      <h2 id="phaseFormTitle">새 Phase 등록</h2>
+      <p class="sub">지정한 <b>힌트 열람</b>과 <b>퀘스트 완료</b> 조건을 팀이 모두 충족하면 Phase가 발동됩니다. 발동 시 팀원 전체에게 팝업이 뜨고, 팀 화면 전체 색조가 선택한 테마로 전환되며, '기록' 탭에 누적됩니다. Phase를 하나도 등록하지 않으면 참가자 화면에 아무것도 나타나지 않습니다.</p>
+      <div class="grid2">
+        <div>
+          <label>단계 번호 (1, 2, 3...)</label>
+          <input type="number" id="pOrder" min="1" placeholder="예: 1">
+        </div>
+        <div>
+          <label>화면 테마 (이 단계 도달 시 전체 색조)</label>
+          <select id="pTheme" style="width:100%; background:var(--panel2); border:1px solid var(--line); border-radius:9px; color:var(--paper); font-size:14px; padding:11px 12px; font-family:var(--sans)">
+            <option value="">기본 — 잉크 + 금색</option>
+            <option value="crimson">크림슨 — 붉은 긴박</option>
+            <option value="verdant">버던트 — 녹색 생존</option>
+            <option value="arctic">아틱 — 한랭 청색</option>
+            <option value="violet">바이올렛 — 보라 미스터리</option>
+          </select>
+        </div>
+      </div>
+      <label>Phase 이름</label>
+      <input type="text" id="pName" placeholder="예: 용의자의 윤곽">
+      <label>Phase 메시지 — 발동 팝업과 기록 탭에 표시 (다음 이동 장소 안내 등)</label>
+      <textarea id="pMessage" placeholder="예: 수첩과 목격자 증언이 맞아떨어진다. 범인은 창고에 무언가를 숨겼다. 지금 즉시 2층 창고 앞으로 이동하라."></textarea>
+      <label>Phase 이미지 (선택)</label>
+      <div class="imgup" id="up_phase">
+        <div class="drop" onclick="pickImage('phase')">이미지 선택 또는 촬영 (자동 압축)</div>
+        <div class="prev"><button class="btn danger tiny rm" onclick="clearImage('phase')">제거</button><img alt="미리보기"></div>
+      </div>
+      <label>발동 조건 ① — 힌트 열람 (선택한 힌트를 모두 열람하면)</label>
+      <div id="phaseHintPick" style="margin-top:4px"><span class="empty" style="padding:6px 0; display:block; text-align:left">등록된 힌트가 없습니다. 힌트 관리 탭에서 먼저 힌트를 만드세요.</span></div>
+      <label>발동 조건 ② — 퀘스트 완료 (선택한 퀘스트를 모두 완료하면)</label>
+      <div id="phaseQuestPick" style="margin-top:4px"><span class="empty" style="padding:6px 0; display:block; text-align:left">등록된 퀘스트가 없습니다.</span></div>
+      <p class="sub" style="margin-top:8px">①만 선택하면 힌트 조건, ②만 선택하면 퀘스트 조건, <b>둘 다 선택하면 모든 조건을 충족해야</b> 발동합니다. 최소 1개는 선택해야 합니다.</p>
+      <div class="inline" style="margin-top:18px">
+        <button class="btn" onclick="savePhase()" id="pSaveBtn">Phase 저장</button>
+        <button class="btn ghost" onclick="clearPhaseForm()" id="pCancelBtn" style="display:none">수정 취소</button>
+      </div>
+      <div class="msg" id="pMsg"></div>
+    </div>
+
+    <div class="card">
+      <h2>등록된 Phase <span class="badge y" id="phaseCount">0</span></h2>
+      <div id="phaseList"><div class="empty">등록된 Phase가 없습니다.</div></div>
+    </div>
+  </div>
+
+  <!-- ⑥ Quest -->
+  <div class="pane" id="paneQuest">
+    <div class="card" id="approvalCard" style="display:none; border-color:var(--gold-soft)">
+      <h2>⏳ 승인 대기함 <span class="badge y" id="approvalCount">0</span></h2>
+      <div id="approvalList"></div>
+    </div>
+
+    <div class="card">
+      <h2 id="questFormTitle">새 Quest 등록</h2>
+      <p class="sub">조건이 충족되면 팀 화면에 의뢰인 대화 팝업이 뜹니다. 팀은 보상을 보고 수락/거절을 선택하고, 수락하면 '기록' 탭에서 답(텍스트/사진)을 제출합니다. Quest를 등록하지 않으면 참가자 화면에 나타나지 않습니다.</p>
+      <div class="grid2">
+        <div>
+          <label>퀘스트 이름 (기록용)</label>
+          <input type="text" id="qName" placeholder="예: 할머니의 부탁">
+        </div>
+        <div>
+          <label>의뢰인 이름</label>
+          <input type="text" id="qNpc" placeholder="예: 지나가는 할머니">
+        </div>
+      </div>
+      <label>의뢰인 이미지 (선택 — 대화창 좌측에 표시)</label>
+      <div class="imgup" id="up_npc">
+        <div class="drop" onclick="pickImage('npc')">이미지 선택 또는 촬영 (자동 압축)</div>
+        <div class="prev"><button class="btn danger tiny rm" onclick="clearImage('npc')">제거</button><img alt="미리보기"></div>
+      </div>
+      <label>대화 내용 (요청) — 말풍선에 표시</label>
+      <textarea id="qDialog" placeholder="예: 이보게 젊은이... 정문 게시판에 붙은 안전 표어의 마지막 단어가 뭔지 알려주겠나?"></textarea>
+      <div class="grid2">
+        <div>
+          <label>답변 형식</label>
+          <select id="qAnswerType" style="width:100%; background:var(--panel2); border:1px solid var(--line); border-radius:9px; color:var(--paper); font-size:14px; padding:11px 12px; font-family:var(--sans)">
+            <option value="text">텍스트 입력</option>
+            <option value="photo">사진 제출</option>
+          </select>
+        </div>
+        <div>
+          <label>완료 방식</label>
+          <select id="qApproval" style="width:100%; background:var(--panel2); border:1px solid var(--line); border-radius:9px; color:var(--paper); font-size:14px; padding:11px 12px; font-family:var(--sans)">
+            <option value="auto">자동 완료</option>
+            <option value="manual">운영자 승인</option>
+          </select>
+        </div>
+      </div>
+      <label>정답 (텍스트 + 자동 완료일 때만 판정 — 비우면 제출 즉시 완료)</label>
+      <input type="text" id="qAnswer" placeholder="공백·대소문자는 무시하고 비교합니다">
+      <label>완료 인사말 (선택 — 완료 팝업 말풍선. 승인 방식에서 승인 메시지를 쓰면 그 메시지가 우선)</label>
+      <input type="text" id="qThanks" placeholder="예: 고맙네 젊은이! 약속한 보상일세.">
+      <div class="grid2">
+        <div>
+          <label>보상 자금 (💰 — 0이면 없음)</label>
+          <input type="number" id="qRewardMoney" min="0" placeholder="예: 500">
+        </div>
+        <div>
+          <label>보상 힌트 선물 (🎁 — 완료 시 파기 없이 영구 공개)</label>
+          <select id="qRewardHint" style="width:100%; background:var(--panel2); border:1px solid var(--line); border-radius:9px; color:var(--paper); font-size:14px; padding:11px 12px; font-family:var(--mono)">
+            <option value="">없음</option>
+          </select>
+        </div>
+      </div>
+      <label>보상 안내 문구 (선택 — 수락 전 대화창에 함께 표시)</label>
+      <input type="text" id="qRewardText" placeholder="예: 우리 손주가 아끼던 물건을 주지">
+      <label>발동 조건 ① — 힌트 열람 (선택한 힌트를 모두 열람하면)</label>
+      <div id="questHintPick" style="margin-top:4px"><span class="empty" style="padding:6px 0; display:block; text-align:left">등록된 힌트가 없습니다.</span></div>
+      <label>발동 조건 ② — 게임 시작 후 경과 시간 (분, 비우면 사용 안함)</label>
+      <input type="number" id="qAfterMin" min="1" placeholder="예: 10 → 시작 10분 후">
+      <p class="sub" style="margin-top:8px">①만 설정하면 힌트 조건, ②만 설정하면 시간 조건, <b>둘 다 설정하면 두 조건을 모두 충족해야</b> 발동합니다. 아무것도 설정하지 않으면 발동하지 않습니다.</p>
+      <div class="inline" style="margin-top:18px">
+        <button class="btn" onclick="saveQuest()" id="qSaveBtn">Quest 저장</button>
+        <button class="btn ghost" onclick="clearQuestForm()" id="qCancelBtn" style="display:none">수정 취소</button>
+      </div>
+      <div class="msg" id="qMsg"></div>
+    </div>
+
+    <div class="card">
+      <h2>등록된 Quest <span class="badge y" id="questCount">0</span></h2>
+      <div id="questAdminList"><div class="empty">등록된 Quest가 없습니다.</div></div>
+    </div>
+  </div>
+
+  <!-- ⑥ 공지 -->
   <div class="pane" id="paneNotice">
     <div class="card">
       <h2>공지 발송</h2>
@@ -392,7 +521,7 @@ function tabTo(btn){
 }
 
 /* ---------- 이미지 업로드 (리사이즈 → dataURL) ---------- */
-const images = { intro: null, hint: null, notice: null };   /* dataURL 저장 */
+const images = { intro: null, hint: null, notice: null, phase: null, npc: null };   /* dataURL 저장 */
 let pickTarget = null;
 function pickImage(target){ pickTarget = target; $('filePicker').value = ''; $('filePicker').click(); }
 $('filePicker').addEventListener('change', async e => {
@@ -431,17 +560,19 @@ function setImage(target, dataURL){
 function clearImage(target){ setImage(target, null); }
 
 /* ---------- 전역 상태 ---------- */
-let config = {}, game = {}, hints = {}, teams = {}, views = {}, attempts = {}, notices = {};
+let config = {}, game = {}, hints = {}, teams = {}, views = {}, attempts = {}, notices = {}, phases = {}, quests = {};
 let liveTimer = null;
 
 function boot(){
   db.ref('config').on('value', s => { config = s.val() || {}; fillConfig(); renderLockBtn(); });
   db.ref('game').on('value', s => { game = s.val() || {}; renderGameState(); });
-  db.ref('hints').on('value', s => { hints = s.val() || {}; renderHints(); });
-  db.ref('teams').on('value', s => { teams = s.val() || {}; renderTeamCtrl(); renderLive(); });
+  db.ref('hints').on('value', s => { hints = s.val() || {}; renderHints(); renderPhaseHintPick(); renderQuestPick(); });
+  db.ref('teams').on('value', s => { teams = s.val() || {}; renderTeamCtrl(); renderLive(); renderApprovals(); });
   db.ref('views').on('value', s => { views = s.val() || {}; renderLive(); renderFeeds(); });
   db.ref('attempts').on('value', s => { attempts = s.val() || {}; renderFeeds(); });
   db.ref('notices').on('value', s => { notices = s.val() || {}; renderNoticeAdmin(); });
+  db.ref('phases').on('value', s => { phases = s.val() || {}; renderPhases(); renderLive(); });
+  db.ref('quests').on('value', s => { quests = s.val() || {}; renderQuestsAdmin(); renderApprovals(); renderPhaseQuestPick(); renderPhases(); });
   clearInterval(liveTimer);
   liveTimer = setInterval(() => { renderGameState(); renderLive(); }, 1000);
 }
@@ -484,6 +615,9 @@ async function wipeProgress(){
     updates[`teams/${id}/elapsedMs`] = null;
     updates[`teams/${id}/lockedUntil`] = null;
     updates[`teams/${id}/wrongCount`] = 0;
+    updates[`teams/${id}/phases`] = null;
+    updates[`teams/${id}/quests`] = null;
+    updates[`teams/${id}/money`] = null;
   });
   await db.ref().update(updates);
 }
@@ -497,7 +631,8 @@ function fullReset(){
   Promise.all([
     db.ref('hints').remove(), db.ref('teams').remove(), db.ref('views').remove(),
     db.ref('attempts').remove(), db.ref('notices').remove(), db.ref('game').remove(),
-    db.ref('reassign').remove(), db.ref('config').remove()
+    db.ref('reassign').remove(), db.ref('config').remove(), db.ref('phases').remove(),
+    db.ref('quests').remove()
   ]).then(() => { alert('전체 리셋이 완료되었습니다.'); location.reload(); });
 }
 function toggleFinalLock(){
@@ -603,6 +738,277 @@ function renderTeamCtrl(){
         </span>`).join('')}</div>
     </div>`;
   }).join('');
+}
+
+/* ---------- Phase 관리 ---------- */
+let editingPhase = null;
+function renderPhaseHintPick(checkedCodes){
+  const codes = Object.keys(hints).sort();
+  if (!codes.length){
+    $('phaseHintPick').innerHTML = '<span class="empty" style="padding:6px 0; display:block; text-align:left">등록된 힌트가 없습니다. 힌트 관리 탭에서 먼저 힌트를 만드세요.</span>';
+    return;
+  }
+  const prev = checkedCodes || new Set(
+    [...document.querySelectorAll('.phHint:checked')].map(el => el.value)
+  );
+  $('phaseHintPick').innerHTML = codes.map(c => `
+    <label class="check" style="display:inline-flex; margin:6px 16px 0 0">
+      <input type="checkbox" class="phHint" value="${esc(c)}" ${prev.has(c) ? 'checked' : ''}>
+      <span class="mono" style="color:var(--gold); font-weight:700">${esc(c)}</span>${hints[c].title ? ' — ' + esc(hints[c].title) : ''}
+    </label>`).join('');
+}
+function renderPhaseQuestPick(checkedIds){
+  const ids = Object.entries(quests).map(([qid, q]) => ({ qid, name: q.name || '' }))
+    .sort((a,b) => a.name.localeCompare(b.name));
+  const prev = checkedIds || new Set([...document.querySelectorAll('.phQuest:checked')].map(el => el.value));
+  $('phaseQuestPick').innerHTML = !ids.length
+    ? '<span class="empty" style="padding:6px 0; display:block; text-align:left">등록된 퀘스트가 없습니다.</span>'
+    : ids.map(x => `
+      <label class="check" style="display:inline-flex; margin:6px 16px 0 0">
+        <input type="checkbox" class="phQuest" value="${esc(x.qid)}" ${prev.has(x.qid) ? 'checked' : ''}>
+        🧭 ${esc(x.name)}
+      </label>`).join('');
+}
+function savePhase(){
+  const order = Number($('pOrder').value);
+  const name = $('pName').value.trim();
+  const message = $('pMessage').value.trim();
+  const picked = [...document.querySelectorAll('.phHint:checked')].map(el => el.value);
+  const pickedQ = [...document.querySelectorAll('.phQuest:checked')].map(el => el.value);
+  if (!order || order < 1) return pMsg('단계 번호를 입력하세요.', true);
+  if (!name && !message) return pMsg('Phase 이름 또는 메시지를 입력하세요.', true);
+  if (!picked.length && !pickedQ.length) return pMsg('발동 조건(힌트 또는 퀘스트)을 1개 이상 선택하세요.', true);
+  const dup = Object.entries(phases).find(([pid, p]) => p.order === order && pid !== editingPhase);
+  if (dup) return pMsg(`단계 ${order}번이 이미 있습니다. 다른 번호를 쓰거나 기존 Phase를 수정하세요.`, true);
+  const requiredHints = {};
+  picked.forEach(c => requiredHints[c] = true);
+  const requiredQuests = {};
+  pickedQ.forEach(qid => requiredQuests[qid] = true);
+  const data = {
+    order, name, message,
+    theme: $('pTheme').value || null,
+    image: images.phase || null,
+    requiredHints: picked.length ? requiredHints : null,
+    requiredQuests: pickedQ.length ? requiredQuests : null,
+    createdAt: (editingPhase && phases[editingPhase]?.createdAt) || firebase.database.ServerValue.TIMESTAMP
+  };
+  const ref = editingPhase ? db.ref('phases/' + editingPhase) : db.ref('phases').push();
+  ref.set(data).then(() => {
+    pMsg(editingPhase ? '수정했습니다.' : `Phase ${order} 저장 완료.`);
+    clearPhaseForm();
+  });
+}
+function pMsg(t, err){ const m = $('pMsg'); m.textContent = t; m.className = 'msg' + (err ? ' err' : ''); if (!err) setTimeout(() => m.textContent = '', 3000); }
+function clearPhaseForm(){
+  editingPhase = null;
+  $('pOrder').value = ''; $('pName').value = ''; $('pMessage').value = ''; $('pTheme').value = '';
+  clearImage('phase');
+  document.querySelectorAll('.phHint').forEach(el => el.checked = false);
+  document.querySelectorAll('.phQuest').forEach(el => el.checked = false);
+  $('phaseFormTitle').textContent = '새 Phase 등록';
+  $('pSaveBtn').textContent = 'Phase 저장';
+  $('pCancelBtn').style.display = 'none';
+}
+function editPhase(pid){
+  const p = phases[pid]; if (!p) return;
+  editingPhase = pid;
+  $('pOrder').value = p.order || '';
+  $('pName').value = p.name || '';
+  $('pMessage').value = p.message || '';
+  $('pTheme').value = p.theme || '';
+  setImage('phase', p.image || null);
+  renderPhaseHintPick(new Set(Object.keys(p.requiredHints || {})));
+  renderPhaseQuestPick(new Set(Object.keys(p.requiredQuests || {})));
+  $('phaseFormTitle').textContent = `Phase 수정 — ${p.order}단계`;
+  $('pSaveBtn').textContent = '수정 저장';
+  $('pCancelBtn').style.display = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function delPhase(pid){
+  const p = phases[pid];
+  if (!confirm(`Phase ${p ? p.order : ''}(${p ? p.name : ''})를 삭제할까요? 팀들의 도달 기록에서도 사라집니다.`)) return;
+  db.ref('phases/' + pid).remove();
+}
+const THEME_NAMES = { '': '기본', crimson: '크림슨', verdant: '버던트', arctic: '아틱', violet: '바이올렛' };
+function renderPhases(){
+  const list = Object.entries(phases).map(([pid, p]) => ({ pid, ...p })).sort((a,b) => (a.order||0) - (b.order||0));
+  $('phaseCount').textContent = list.length + '개';
+  $('phaseList').innerHTML = !list.length ? '<div class="empty">등록된 Phase가 없습니다.</div>' :
+    `<table><thead><tr><th>단계</th><th>내용</th><th>발동 조건</th><th>테마</th><th></th></tr></thead><tbody>` +
+    list.map(x => {
+      const conds = Object.keys(x.requiredHints || {}).sort().map(esc);
+      Object.keys(x.requiredQuests || {}).forEach(qid => conds.push('🧭' + esc((quests[qid] && quests[qid].name) || '삭제된 퀘스트')));
+      return `<tr>
+      <td class="mono" style="font-weight:700; color:var(--gold)">P${x.order}</td>
+      <td><b>${esc(x.name || '')}</b>${x.image ? ' <span class="badge y">🖼</span>' : ''}<br><span class="memo">${esc((x.message || '').slice(0, 60))}${(x.message||'').length > 60 ? '…' : ''}</span></td>
+      <td class="mono" style="letter-spacing:.08em; font-size:12px">${conds.join(' + ')}</td>
+      <td>${THEME_NAMES[x.theme || ''] || x.theme}</td>
+      <td style="text-align:right; white-space:nowrap">
+        <button class="btn ghost small" onclick="editPhase('${esc(x.pid)}')">수정</button>
+        <button class="btn danger small" onclick="delPhase('${esc(x.pid)}')">삭제</button>
+      </td></tr>`;
+    }).join('') + '</tbody></table>';
+}
+
+/* ---------- Quest 관리 ---------- */
+let editingQuest = null;
+function renderQuestPick(checkedCodes){
+  const codes = Object.keys(hints).sort();
+  const prev = checkedCodes || new Set([...document.querySelectorAll('.qHint:checked')].map(el => el.value));
+  $('questHintPick').innerHTML = !codes.length
+    ? '<span class="empty" style="padding:6px 0; display:block; text-align:left">등록된 힌트가 없습니다.</span>'
+    : codes.map(c => `
+      <label class="check" style="display:inline-flex; margin:6px 16px 0 0">
+        <input type="checkbox" class="qHint" value="${esc(c)}" ${prev.has(c) ? 'checked' : ''}>
+        <span class="mono" style="color:var(--gold); font-weight:700">${esc(c)}</span>${hints[c].title ? ' — ' + esc(hints[c].title) : ''}
+      </label>`).join('');
+  /* 보상 힌트 select */
+  const sel = $('qRewardHint');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">없음</option>' + codes.map(c =>
+    `<option value="${esc(c)}">${esc(c)}${hints[c].title ? ' — ' + esc(hints[c].title) : ''}</option>`).join('');
+  sel.value = codes.includes(cur) ? cur : '';
+}
+function saveQuest(){
+  const name = $('qName').value.trim();
+  const dialog = $('qDialog').value.trim();
+  const picked = [...document.querySelectorAll('.qHint:checked')].map(el => el.value);
+  const afterMin = Number($('qAfterMin').value) || 0;
+  if (!name) return qMsgFn('퀘스트 이름을 입력하세요.', true);
+  if (!dialog) return qMsgFn('대화 내용을 입력하세요.', true);
+  if (!picked.length && !afterMin) return qMsgFn('발동 조건(힌트 또는 시간)을 하나 이상 설정하세요.', true);
+  const triggerHints = {};
+  picked.forEach(c => triggerHints[c] = true);
+  const data = {
+    name, dialog,
+    npcName: $('qNpc').value.trim(),
+    npcImage: images.npc || null,
+    answerType: $('qAnswerType').value,
+    approval: $('qApproval').value,
+    answer: $('qAnswer').value.trim(),
+    thanksDialog: $('qThanks').value.trim(),
+    rewardMoney: Number($('qRewardMoney').value) || 0,
+    rewardHintCode: $('qRewardHint').value || null,
+    rewardText: $('qRewardText').value.trim(),
+    triggerHints: picked.length ? triggerHints : null,
+    triggerAfterMin: afterMin || null,
+    createdAt: (editingQuest && quests[editingQuest]?.createdAt) || firebase.database.ServerValue.TIMESTAMP
+  };
+  const ref = editingQuest ? db.ref('quests/' + editingQuest) : db.ref('quests').push();
+  ref.set(data).then(() => { qMsgFn(editingQuest ? '수정했습니다.' : '저장했습니다.'); clearQuestForm(); });
+}
+function qMsgFn(t, err){ const m = $('qMsg'); m.textContent = t; m.className = 'msg' + (err ? ' err' : ''); if (!err) setTimeout(() => m.textContent = '', 3000); }
+function clearQuestForm(){
+  editingQuest = null;
+  ['qName','qNpc','qDialog','qAnswer','qThanks','qRewardMoney','qRewardText','qAfterMin'].forEach(id => $(id).value = '');
+  $('qAnswerType').value = 'text'; $('qApproval').value = 'auto'; $('qRewardHint').value = '';
+  clearImage('npc');
+  document.querySelectorAll('.qHint').forEach(el => el.checked = false);
+  $('questFormTitle').textContent = '새 Quest 등록';
+  $('qSaveBtn').textContent = 'Quest 저장';
+  $('qCancelBtn').style.display = 'none';
+}
+function editQuest(qid){
+  const q = quests[qid]; if (!q) return;
+  editingQuest = qid;
+  $('qName').value = q.name || ''; $('qNpc').value = q.npcName || '';
+  $('qDialog').value = q.dialog || ''; $('qAnswer').value = q.answer || '';
+  $('qThanks').value = q.thanksDialog || '';
+  $('qAnswerType').value = q.answerType || 'text';
+  $('qApproval').value = q.approval || 'auto';
+  $('qRewardMoney').value = q.rewardMoney || '';
+  $('qRewardText').value = q.rewardText || '';
+  $('qAfterMin').value = q.triggerAfterMin || '';
+  setImage('npc', q.npcImage || null);
+  renderQuestPick(new Set(Object.keys(q.triggerHints || {})));
+  $('qRewardHint').value = q.rewardHintCode || '';
+  $('questFormTitle').textContent = `Quest 수정 — ${q.name}`;
+  $('qSaveBtn').textContent = '수정 저장';
+  $('qCancelBtn').style.display = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function delQuest(qid){
+  const q = quests[qid];
+  if (!confirm(`Quest "${q ? q.name : ''}"를 삭제할까요? 팀들의 진행 기록에서도 사라집니다.`)) return;
+  db.ref('quests/' + qid).remove();
+}
+function renderQuestsAdmin(){
+  const list = Object.entries(quests).map(([qid, q]) => ({ qid, ...q })).sort((a,b) => (a.createdAt||0) - (b.createdAt||0));
+  $('questCount').textContent = list.length + '개';
+  $('questAdminList').innerHTML = !list.length ? '<div class="empty">등록된 Quest가 없습니다.</div>' :
+    `<table><thead><tr><th>이름</th><th>발동 조건</th><th>답변/완료</th><th>보상</th><th></th></tr></thead><tbody>` +
+    list.map(x => {
+      const trig = [];
+      const th = Object.keys(x.triggerHints || {}).sort();
+      if (th.length) trig.push(th.join('+'));
+      if (x.triggerAfterMin) trig.push(`${x.triggerAfterMin}분`);
+      const rw = [];
+      if (Number(x.rewardMoney) > 0) rw.push(`💰${Number(x.rewardMoney).toLocaleString()}`);
+      if (x.rewardHintCode) rw.push(`🎁${x.rewardHintCode}`);
+      return `<tr>
+        <td><b>${esc(x.name || '')}</b>${x.npcImage ? ' <span class="badge y">🖼</span>' : ''}<br><span class="memo">${esc(x.npcName || '')}</span></td>
+        <td class="mono" style="font-size:12px">${trig.map(esc).join(' & ') || '-'}</td>
+        <td style="font-size:12px">${x.answerType === 'photo' ? '📷 사진' : '✏ 텍스트'} · ${x.approval === 'manual' ? '승인' : '자동'}</td>
+        <td class="mono" style="font-size:12px">${rw.map(esc).join(' ') || '-'}</td>
+        <td style="text-align:right; white-space:nowrap">
+          <button class="btn ghost small" onclick="editQuest('${esc(x.qid)}')">수정</button>
+          <button class="btn danger small" onclick="delQuest('${esc(x.qid)}')">삭제</button>
+        </td></tr>`;
+    }).join('') + '</tbody></table>';
+}
+/* ---------- Quest 승인 대기함 ---------- */
+function renderApprovals(){
+  const pend = [];
+  Object.entries(teams).forEach(([tid, t]) =>
+    Object.entries(t.quests || {}).forEach(([qid, st]) => {
+      if (st.status === 'submitted' && quests[qid]) pend.push({ tid, qid, st, q: quests[qid] });
+    }));
+  pend.sort((a,b) => (a.st.submittedAt || 0) - (b.st.submittedAt || 0));
+  $('pendingBadge').style.display = pend.length ? '' : 'none';
+  $('pendingBadge').textContent = pend.length;
+  $('approvalCard').style.display = pend.length ? '' : 'none';
+  $('approvalCount').textContent = pend.length + '건';
+  $('approvalList').innerHTML = pend.map(x => `
+    <div class="teamblock">
+      <div class="thead">
+        <span class="tid">${esc(x.tid)}</span>
+        <span class="badge y">${esc(x.q.name || '')}</span>
+        <span class="memo" style="font-size:12px">${esc(x.st.by || '')} · ${x.st.submittedAt ? fmtClock(x.st.submittedAt) : ''}</span>
+      </div>
+      ${x.st.answerText ? `<div style="margin-top:10px; font-size:14px; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:10px 12px">"${esc(x.st.answerText)}"</div>` : ''}
+      ${x.st.answerImage ? `<img src="${x.st.answerImage}" style="max-width:260px; border-radius:10px; margin-top:10px; border:1px solid var(--line); display:block" alt="제출 사진">` : ''}
+      ${x.q.answer ? `<div class="memo" style="margin-top:8px; font-size:12px">참고 정답: ${esc(x.q.answer)}</div>` : ''}
+      <div class="inline" style="margin-top:12px">
+        <input type="text" id="apMsg_${esc(x.tid)}_${esc(x.qid)}" placeholder="승인/반려 메시지 (의뢰인 말풍선으로 전달, 비워도 됨)">
+        <button class="btn small" onclick="approveSubmit('${esc(x.tid)}','${esc(x.qid)}',true)">✔ 승인</button>
+        <button class="btn danger small" onclick="approveSubmit('${esc(x.tid)}','${esc(x.qid)}',false)">✘ 반려</button>
+      </div>
+    </div>`).join('');
+}
+async function approveSubmit(tid, qid, ok){
+  const el = $(`apMsg_${tid}_${qid}`);
+  const msg = el ? el.value.trim() : '';
+  const ref = db.ref(`teams/${tid}/quests/${qid}`);
+  if (ok){
+    const res = await ref.transaction(cur => {
+      if (!cur || cur.status !== 'submitted') return;
+      return { ...cur, status: 'done', doneAt: serverNow(), feedback: msg || null };
+    });
+    if (res.committed && res.snapshot.val() && res.snapshot.val().status === 'done'){
+      const q = quests[qid];
+      if (q && Number(q.rewardMoney) > 0)
+        db.ref(`teams/${tid}/money`).transaction(cur => (cur || 0) + Number(q.rewardMoney));
+      if (q && q.rewardHintCode && hints[q.rewardHintCode]){
+        const h = hints[q.rewardHintCode];
+        db.ref(`teams/${tid}/quests/${qid}/rewardHint`).set({
+          code: q.rewardHintCode, title: h.title || '', content: h.content || '', image: h.image || null
+        });
+      }
+    }
+  } else {
+    ref.update({ status: 'accepted', rejectedAt: serverNow(), feedback: msg || null,
+                 answerText: null, answerImage: null, submittedAt: null });
+  }
 }
 
 /* ---------- 공지 ---------- */
@@ -785,19 +1191,24 @@ function renderLive(){
     const t = teams[id];
     const v = views[id] ? Object.keys(views[id]).length : 0;
     const locked = t.lockedUntil && serverNow() < t.lockedUntil;
+    const phaseOrders = Object.keys(t.phases || {}).map(pid => (phases[pid] && phases[pid].order) || 0);
     return { id, v, wrong: t.wrongCount || 0, locked, lockedUntil: t.lockedUntil,
              members: Object.keys(t.members || {}).length,
+             phase: phaseOrders.length ? Math.max(...phaseOrders) : 0,
+             money: t.money || 0,
              fin: !!t.finishedAt, elapsed: t.elapsedMs };
   });
   rows.sort((a,b) => (a.fin === b.fin) ? (a.fin ? a.elapsed - b.elapsed : b.v - a.v) : (a.fin ? -1 : 1));
   let rank = 0;
   $('liveTeams').innerHTML = !rows.length ? '<div class="empty">등록된 팀이 없습니다.</div>' :
-    `<table><thead><tr><th>순위</th><th>팀</th><th>인원</th><th>열람</th><th>오답</th><th>상태</th><th>기록</th></tr></thead><tbody>` +
+    `<table><thead><tr><th>순위</th><th>팀</th><th>인원</th><th>열람</th><th>Phase</th><th>💰</th><th>오답</th><th>상태</th><th>기록</th></tr></thead><tbody>` +
     rows.map(r => `<tr>
       <td class="mono">${r.fin ? (++rank === 1 ? '🏆 1' : rank) : '-'}</td>
       <td class="mono">${esc(r.id)}</td>
       <td class="mono">${r.members}</td>
       <td class="mono">${r.v}</td>
+      <td class="mono">${r.phase ? 'P' + r.phase : '-'}</td>
+      <td class="mono">${r.money ? Number(r.money).toLocaleString() : '-'}</td>
       <td class="mono">${r.wrong}</td>
       <td>${r.fin ? '<span class="badge g">완료</span>' : r.locked ? `<span class="badge r">잠금 ${fmtDur(r.lockedUntil - serverNow())}</span>` : '<span class="badge y">진행중</span>'}</td>
       <td class="mono">${r.fin ? fmtDur(r.elapsed) : '-'}</td></tr>`).join('') +

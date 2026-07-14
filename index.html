@@ -23,7 +23,49 @@ body{
     linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
   background-size:28px 28px;
+  transition:background-color .9s ease, color .9s ease;
 }
+/* ---- Phase 테마 프리셋 (관리자가 Phase별로 지정) ---- */
+body[data-theme="crimson"]{--ink:#190C0E; --panel:#231114; --panel2:#2B151A; --line:#472028; --gold:#FF5A3C; --gold-soft:#D14A34; --paper:#F3E4DD; --dim:#B08A8E}
+body[data-theme="verdant"]{--ink:#0C1410; --panel:#122019; --panel2:#16281F; --line:#24402F; --gold:#4FC878; --gold-soft:#3EA862; --paper:#E2EFE4; --dim:#8AA995}
+body[data-theme="arctic"]{--ink:#0B1119; --panel:#111A26; --panel2:#15202E; --line:#233448; --gold:#5FA8E8; --gold-soft:#4B8CC7; --paper:#E0EAF2; --dim:#8CA3BC}
+body[data-theme="violet"]{--ink:#120E19; --panel:#1A1424; --panel2:#20182D; --line:#342647; --gold:#B58AE8; --gold-soft:#9A70CC; --paper:#EBE4F2; --dim:#A395B8}
+/* 진행 기록 타임라인 */
+.tl-item{display:flex; gap:12px; padding:14px 0; border-bottom:1px solid var(--line)}
+.tl-item:last-child{border-bottom:none}
+.tl-dot{width:10px; height:10px; border-radius:50%; background:var(--gold); margin-top:6px; flex:none; box-shadow:0 0 8px rgba(227,166,60,.5)}
+.tl-body{flex:1}
+.tl-body .tt{font-weight:700; font-size:15px; margin-bottom:3px; word-break:keep-all}
+.tl-body .tm{font-family:var(--mono); font-size:11px; color:var(--dim); margin-bottom:6px; letter-spacing:.1em}
+.tl-body .tx{font-size:14px; color:var(--dim); line-height:1.75; white-space:pre-wrap; word-break:keep-all}
+.tl-body img{width:100%; max-width:320px; border-radius:10px; margin-top:8px; border:1px solid var(--line); display:block}
+/* 퀘스트 대화 */
+.qv{display:flex; gap:12px; align-items:flex-start}
+.qv .npc{width:82px; height:82px; border-radius:12px; background:var(--panel2); border:1px solid var(--line); flex:none; overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:38px}
+.qv .npc img{width:100%; height:100%; object-fit:cover}
+.npcname{font-family:var(--mono); font-size:11px; color:var(--gold); letter-spacing:.14em; margin-bottom:6px}
+.bubble{background:var(--panel2); border:1px solid var(--line); border-radius:4px 14px 14px 14px; padding:13px 14px; font-size:14px; line-height:1.8; white-space:pre-wrap; word-break:keep-all}
+.rewardline{margin-top:14px; border:1px dashed var(--gold-soft); border-radius:10px; padding:10px 14px; font-size:13px; color:var(--gold); line-height:1.6; word-break:keep-all}
+.qbtns{display:flex; gap:10px}
+.qbtns button{flex:1}
+.qextra{margin-top:12px}
+.qextra .hgift{border:1px solid var(--gold-soft); border-radius:10px; padding:12px 14px; margin-top:8px}
+.qextra .hgift .hc{font-family:var(--mono); font-weight:700; color:var(--gold); letter-spacing:.15em; font-size:12px; margin-bottom:6px}
+.qextra .hgift .ht{font-size:14px; line-height:1.75; white-space:pre-wrap; word-break:keep-all}
+.qextra img{width:100%; border-radius:10px; margin-top:8px; border:1px solid var(--line)}
+/* 퀘스트 카드 (기록 탭) */
+.qcard{border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:12px; background:var(--panel2)}
+.qcard:last-child{margin-bottom:0}
+.qcard .qh{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px}
+.qcard .qn{font-weight:700; font-size:14px}
+.qcard .qs{font-family:var(--mono); font-size:10px; letter-spacing:.1em; padding:3px 8px; border-radius:6px; border:1px solid var(--line); color:var(--dim); white-space:nowrap}
+.qcard .qs.y{border-color:var(--gold); color:var(--gold)}
+.qcard .qs.r{border-color:var(--red); color:var(--red)}
+.qcard .qd{font-size:13px; color:var(--dim); line-height:1.7; word-break:keep-all}
+.qcard .rej{margin-top:8px; font-size:13px; color:var(--red); line-height:1.6}
+.qcard input[type=text]{margin-top:10px; font-size:15px; padding:11px 12px}
+.qcard .photoprev{width:100%; max-width:260px; border-radius:10px; margin-top:10px; border:1px solid var(--line); display:block}
+.qcard button{margin-top:10px; padding:12px; font-size:14px}
 .topline{
   width:100%; max-width:520px; display:flex; justify-content:space-between; align-items:center;
   font-family:var(--mono); font-size:11px; letter-spacing:.14em; color:var(--dim);
@@ -149,7 +191,10 @@ td.mono{font-family:var(--mono)}
 
 <div class="topline">
   <span><span class="dot">●</span> MISSION HQ</span>
-  <span id="teamChip">-</span>
+  <span style="display:flex; gap:14px; align-items:center">
+    <span id="phaseBadge" style="color:var(--gold); display:none; font-weight:700"></span>
+    <span id="teamChip">-</span>
+  </span>
 </div>
 
 <div class="wrap">
@@ -183,6 +228,7 @@ td.mono{font-family:var(--mono)}
         <div class="stat"><div class="lb">상태</div><div class="vl" id="stState">-</div></div>
         <div class="stat"><div class="lb">경과 시간</div><div class="vl live" id="stElapsed">--:--</div></div>
         <div class="stat"><div class="lb">열람 힌트</div><div class="vl" id="stViews">0</div></div>
+        <div class="stat" id="stMoneyBox" style="display:none"><div class="lb">자금</div><div class="vl" id="stMoney" style="color:var(--gold)">0</div></div>
       </div>
 
       <div class="card">
@@ -223,7 +269,22 @@ td.mono{font-family:var(--mono)}
       </div>
     </div>
 
-    <!-- 탭 4: 현황 -->
+    <!-- 탭 4: 진행 기록 -->
+    <div class="tabpane" id="tabLog">
+      <div class="kicker">CASE FILE</div>
+      <h1>진행 기록</h1>
+      <p class="sub">퀘스트와 팀이 도달한 국면이 기록됩니다.</p>
+      <div class="card" id="questSection" style="display:none">
+        <h2>🧭 퀘스트</h2>
+        <div id="questList"><div class="empty">받은 퀘스트가 없습니다.</div></div>
+      </div>
+      <div class="card">
+        <h2>📜 타임라인</h2>
+        <div id="logBoard"><div class="empty">아직 기록이 없습니다.</div></div>
+      </div>
+    </div>
+
+    <!-- 탭 5: 현황 -->
     <div class="tabpane" id="tabRank">
       <div class="kicker">SCOREBOARD</div>
       <h1>팀 현황</h1>
@@ -242,9 +303,28 @@ td.mono{font-family:var(--mono)}
     <button class="tabbtn on" data-pane="tabMain" onclick="tabTo(this)"><span class="ic">🏠</span>메인</button>
     <button class="tabbtn" data-pane="tabHints" onclick="tabTo(this)"><span class="ic">📂</span>힌트</button>
     <button class="tabbtn" data-pane="tabCode" onclick="tabTo(this)"><span class="ic">🔑</span>코드</button>
+    <button class="tabbtn" data-pane="tabLog" onclick="tabTo(this)" id="tabLogBtn" style="display:none"><span class="ic">📜</span>기록</button>
     <button class="tabbtn" data-pane="tabRank" onclick="tabTo(this)"><span class="ic">🏁</span>현황</button>
   </div>
 </nav>
+
+<!-- 퀘스트 대화 팝업 -->
+<div class="overlay" id="qOverlay">
+  <div class="modal">
+    <div class="mk" id="qmk">QUEST</div>
+    <div class="qv">
+      <div class="npc" id="qNpcBox">🧓</div>
+      <div style="flex:1">
+        <div class="npcname" id="qNpcName"></div>
+        <div class="bubble" id="qBubble"></div>
+      </div>
+    </div>
+    <div class="qextra" id="qExtra"></div>
+    <div class="rewardline" id="qReward" style="display:none"></div>
+    <div class="qbtns" id="qBtns"></div>
+  </div>
+</div>
+<input type="file" id="qPhotoPicker" accept="image/*" style="display:none">
 
 <!-- 팝업 -->
 <div class="overlay" id="overlay">
@@ -307,6 +387,7 @@ function leaveTeam(msgText){
   detachTeamListeners();
   if (team) db.ref(`teams/${team}/members/${myToken}`).remove();
   team = ''; localStorage.removeItem('hh_team');
+  document.body.dataset.theme = ''; $('phaseBadge').style.display = 'none';
   renderChip(); show('joinView');
   if (msgText) openModal('SYSTEM', '알림', msgText);
 }
@@ -330,7 +411,7 @@ function nextModal(){
 function closeModal(){ nextModal(); }
 
 /* ---------- 전역 상태 ---------- */
-let config = {}, game = {}, teams = {}, myViews = {}, notices = {}, myTeam = null;
+let config = {}, game = {}, teams = {}, myViews = {}, notices = {}, phases = {}, quests = {}, myTeam = null;
 let uiTimer = null;
 let prevStarted = null, prevEnded = null;   /* 게임 시작/종료 팝업 감지 */
 let bootDone = false;
@@ -348,14 +429,302 @@ db.ref('game').on('value', s => {
   prevStarted = started; prevEnded = ended;
   renderAll();
 });
-db.ref('teams').on('value', s => { teams = s.val() || {}; myTeam = team ? teams[team] : null; renderAll(); });
+db.ref('teams').on('value', s => { teams = s.val() || {}; myTeam = team ? teams[team] : null; onPhaseData(); onQuestData(); renderAll(); });
 db.ref('notices').on('value', s => { notices = s.val() || {}; renderNotices(); maybePopupNotice(); });
+db.ref('phases').on('value', s => { phases = s.val() || {}; updateLogTab(); onPhaseData(); });
+db.ref('quests').on('value', s => { quests = s.val() || {}; updateLogTab(); onQuestData(); });
+function updateLogTab(){
+  $('tabLogBtn').style.display = (Object.keys(phases).length || Object.keys(quests).length) ? '' : 'none';
+  $('questSection').style.display = Object.keys(quests).length ? '' : 'none';
+}
+
+/* ---------- Phase ---------- */
+function onPhaseData(){
+  if (!team) return;
+  checkPhases();
+  applyPhaseState();
+  renderLog();
+}
+/* 조건(힌트 열람 + 퀘스트 완료) 충족 시 팀 도달 기록 — 트랜잭션으로 1회만 */
+function checkPhases(){
+  if (!team || !Object.keys(phases).length) return;
+  const viewed = new Set(Object.keys(myViews));
+  const reached = (myTeam && myTeam.phases) || {};
+  const qstate = (myTeam && myTeam.quests) || {};
+  Object.entries(phases).forEach(([pid, p]) => {
+    if (reached[pid]) return;
+    const reqH = Object.keys(p.requiredHints || {});
+    const reqQ = Object.keys(p.requiredQuests || {});
+    if (!reqH.length && !reqQ.length) return;
+    const hOk = reqH.every(c => viewed.has(c));
+    const qOk = reqQ.every(qid => qstate[qid] && qstate[qid].status === 'done');
+    if (!hOk || !qOk) return;
+    db.ref(`teams/${team}/phases/${pid}`).transaction(cur => cur ? undefined : { at: serverNow() });
+  });
+}
+/* 현재 국면 테마 적용 + 새 도달 팝업 */
+function applyPhaseState(){
+  if (!team){ document.body.dataset.theme = ''; $('phaseBadge').style.display = 'none'; return; }
+  const reached = (myTeam && myTeam.phases) || {};
+  let top = null;
+  Object.keys(reached).forEach(pid => {
+    const p = phases[pid]; if (!p) return;
+    if (!top || (p.order || 0) > (top.order || 0)) top = p;
+  });
+  document.body.dataset.theme = (top && top.theme) || '';
+  if (top){ $('phaseBadge').textContent = `PHASE ${top.order}`; $('phaseBadge').style.display = ''; }
+  else $('phaseBadge').style.display = 'none';
+
+  /* 새로 도달한 Phase 팝업 (최고 단계만, 나머지는 조용히 기록) */
+  const seen = JSON.parse(localStorage.getItem('hh_phase_seen') || '{}');
+  const unseen = Object.entries(reached)
+    .filter(([pid, v]) => phases[pid] && seen[pid] !== v.at)
+    .sort((a,b) => (phases[a[0]].order || 0) - (phases[b[0]].order || 0));
+  if (!unseen.length) return;
+  unseen.forEach(([pid, v]) => seen[pid] = v.at);
+  localStorage.setItem('hh_phase_seen', JSON.stringify(seen));
+  const [pid] = unseen[unseen.length - 1];
+  const p = phases[pid];
+  openModal(`PHASE ${p.order}`, p.name || `새로운 국면 — Phase ${p.order}`, p.message || '', p.image || null);
+}
+function renderLog(){
+  const reached = (myTeam && myTeam.phases) || {};
+  const items = Object.entries(reached).map(([pid, v]) => ({ at: v.at || 0, type: 'phase', p: phases[pid] }))
+    .filter(x => x.p);
+  const qstate = (myTeam && myTeam.quests) || {};
+  Object.entries(qstate).forEach(([qid, st]) => {
+    if (st.status === 'done' && quests[qid]) items.push({ at: st.doneAt || 0, type: 'quest', q: quests[qid], st });
+  });
+  items.sort((a,b) => a.at - b.at);
+  $('logBoard').innerHTML = !items.length ? '<div class="empty">아직 기록이 없습니다.</div>' :
+    items.map(x => {
+      if (x.type === 'phase') return `<div class="tl-item"><div class="tl-dot"></div><div class="tl-body">
+        <div class="tt">PHASE ${x.p.order} — ${esc(x.p.name || '')}</div>
+        <div class="tm">${fmtClock(x.at)} 도달</div>
+        <div class="tx">${esc(x.p.message || '')}</div>
+        ${x.p.image ? `<img src="${x.p.image}" alt="Phase 이미지">` : ''}</div></div>`;
+      return `<div class="tl-item"><div class="tl-dot"></div><div class="tl-body">
+        <div class="tt">🧭 퀘스트 완료 — ${esc(x.q.name || '')}</div>
+        <div class="tm">${fmtClock(x.at)} · ${esc(x.st.by || '')} 제출</div>
+        ${x.st.feedback ? `<div class="tx">"${esc(x.st.feedback)}" — ${esc(x.q.npcName || '의뢰인')}</div>` : ''}
+        <div class="tx">${rewardText(x.q)}</div>
+        ${x.st.rewardHint ? `<div class="qextra"><div class="hgift"><div class="hc">🎁 힌트 선물 — ${esc(x.st.rewardHint.code)}</div>
+          ${x.st.rewardHint.title ? `<b style="font-size:14px">${esc(x.st.rewardHint.title)}</b><br>` : ''}
+          <div class="ht">${esc(x.st.rewardHint.content || '')}</div>
+          ${x.st.rewardHint.image ? `<img src="${x.st.rewardHint.image}" alt="힌트 이미지">` : ''}</div></div>` : ''}
+      </div></div>`;
+    }).join('');
+}
+
+/* ---------- Quest ---------- */
+const QNPC_FALLBACK = '🕵️';
+function rewardText(q){
+  const parts = [];
+  if (Number(q.rewardMoney) > 0) parts.push(`💰 ${Number(q.rewardMoney).toLocaleString()}`);
+  if (q.rewardHintCode) parts.push('🎁 힌트 선물');
+  if (q.rewardText) parts.push(q.rewardText);
+  return parts.length ? '보상: ' + esc(parts.join(' · ')) : '보상 없음';
+}
+function questTriggerOk(q){
+  const reqH = Object.keys(q.triggerHints || {});
+  const hasTime = Number(q.triggerAfterMin) > 0;
+  if (!reqH.length && !hasTime) return false;   /* 트리거 미설정 → 발동 안함 */
+  const viewed = new Set(Object.keys(myViews));
+  const hOk = reqH.length ? reqH.every(c => viewed.has(c)) : true;
+  const tOk = hasTime ? (game.startedAt && serverNow() - game.startedAt >= Number(q.triggerAfterMin) * 60000) : true;
+  return hOk && tOk;
+}
+function checkQuests(){
+  if (!team || !game.startedAt || game.endedAt || !Object.keys(quests).length) return;
+  const qstate = (myTeam && myTeam.quests) || {};
+  Object.entries(quests).forEach(([qid, q]) => {
+    if (qstate[qid]) return;
+    if (!questTriggerOk(q)) return;
+    db.ref(`teams/${team}/quests/${qid}`).transaction(cur => cur ? undefined : { status: 'offered', offeredAt: serverNow() });
+  });
+}
+/* 상태 전이 팝업 감지 */
+function onQuestData(){
+  if (!team) return;
+  checkQuests(); renderQuestList(); renderLog();
+  const qstate = (myTeam && myTeam.quests) || {};
+  const seen = JSON.parse(localStorage.getItem('hh_quest_seen') || '{}');
+  let dirty = false;
+  Object.entries(qstate).forEach(([qid, st]) => {
+    const q = quests[qid]; if (!q) return;
+    let key = null, mode = null;
+    if (st.status === 'offered'){ key = 'of:' + st.offeredAt; mode = 'offer'; }
+    else if (st.status === 'done'){ key = 'dn:' + st.doneAt; mode = 'done'; }
+    else if (st.status === 'accepted' && st.rejectedAt){ key = 'rj:' + st.rejectedAt; mode = 'reject'; }
+    if (!key || seen[qid] === key) return;
+    seen[qid] = key; dirty = true;
+    openQuestDialog(qid, mode);
+  });
+  if (dirty) localStorage.setItem('hh_quest_seen', JSON.stringify(seen));
+}
+/* NPC 대화 팝업 */
+function openQuestDialog(qid, mode){
+  const q = quests[qid]; if (!q) return;
+  const st = ((myTeam && myTeam.quests) || {})[qid] || {};
+  $('qNpcBox').innerHTML = q.npcImage ? `<img src="${q.npcImage}" alt="">` : QNPC_FALLBACK;
+  $('qNpcName').textContent = q.npcName || '의뢰인';
+  $('qExtra').innerHTML = '';
+  $('qReward').style.display = '';
+  $('qReward').innerHTML = rewardText(q);
+  const btns = $('qBtns');
+  if (mode === 'offer'){
+    $('qmk').textContent = 'QUEST';
+    $('qBubble').textContent = q.dialog || '';
+    btns.innerHTML = `<button class="ghost" onclick="declineQuest('${qid}')">거절</button><button onclick="acceptQuest('${qid}')">수락</button>`;
+  } else if (mode === 'done'){
+    $('qmk').textContent = 'QUEST CLEAR';
+    $('qBubble').textContent = st.feedback || q.thanksDialog || '고맙네! 약속한 보상일세.';
+    if (st.rewardHint){
+      $('qExtra').innerHTML = `<div class="hgift"><div class="hc">🎁 힌트 선물 — ${esc(st.rewardHint.code)}</div>
+        ${st.rewardHint.title ? `<b style="font-size:14px">${esc(st.rewardHint.title)}</b><br>` : ''}
+        <div class="ht">${esc(st.rewardHint.content || '')}</div>
+        ${st.rewardHint.image ? `<img src="${st.rewardHint.image}" alt="">` : ''}</div>
+        <p class="sub" style="margin-top:8px; font-size:12px">이 힌트는 파기되지 않고 기록 탭에 보관됩니다.</p>`;
+    }
+    btns.innerHTML = `<button onclick="closeQuestDialog()">확인</button>`;
+  } else if (mode === 'reject'){
+    $('qmk').textContent = 'RETRY';
+    $('qBubble').textContent = st.feedback || '음... 이게 아닌 것 같은데. 다시 해보게나.';
+    $('qReward').style.display = 'none';
+    btns.innerHTML = `<button onclick="closeQuestDialog()">확인</button>`;
+  }
+  $('qOverlay').classList.add('show');
+}
+function closeQuestDialog(){ $('qOverlay').classList.remove('show'); renderQuestList(); }
+function acceptQuest(qid){
+  db.ref(`teams/${team}/quests/${qid}`).transaction(cur => {
+    if (!cur || (cur.status !== 'offered' && cur.status !== 'declined')) return;
+    return { ...cur, status: 'accepted', acceptedAt: serverNow(), by: myName };
+  });
+  closeQuestDialog();
+}
+function declineQuest(qid){
+  db.ref(`teams/${team}/quests/${qid}`).transaction(cur => {
+    if (!cur || cur.status !== 'offered') return;
+    return { ...cur, status: 'declined', declinedAt: serverNow() };
+  });
+  closeQuestDialog();
+}
+/* 진행중 퀘스트 목록 */
+let pendingPhoto = {};   /* qid -> dataURL */
+function renderQuestList(){
+  const qstate = (myTeam && myTeam.quests) || {};
+  const items = Object.entries(qstate)
+    .map(([qid, st]) => ({ qid, st, q: quests[qid] }))
+    .filter(x => x.q && x.st.status !== 'done')
+    .sort((a,b) => (a.st.offeredAt || 0) - (b.st.offeredAt || 0));
+  if (!items.length){ $('questList').innerHTML = '<div class="empty">진행 중인 퀘스트가 없습니다.</div>'; return; }
+  $('questList').innerHTML = items.map(x => {
+    const { qid, st, q } = x;
+    let badge = '', body = '';
+    if (st.status === 'offered'){
+      badge = '<span class="qs y">새 요청</span>';
+      body = `<div class="qd">${esc(q.npcName || '의뢰인')}의 요청이 도착했습니다.</div>
+        <button onclick="openQuestDialog('${qid}','offer')">대화 보기</button>`;
+    } else if (st.status === 'declined'){
+      badge = '<span class="qs">거절함</span>';
+      body = `<div class="qd">거절한 요청입니다. 마음이 바뀌면 다시 대화할 수 있습니다.</div>
+        <button class="ghost" onclick="openQuestDialog('${qid}','offer')">다시 대화하기</button>`;
+    } else if (st.status === 'submitted'){
+      badge = '<span class="qs y">승인 대기중</span>';
+      body = `<div class="qd">답을 제출했습니다. ${esc(q.npcName || '의뢰인')}이 확인하는 중입니다...</div>`;
+    } else if (st.status === 'accepted'){
+      badge = '<span class="qs y">진행중</span>';
+      const rej = st.rejectedAt && st.feedback ? `<div class="rej">↩ "${esc(st.feedback)}"</div>` : (st.rejectedAt ? '<div class="rej">↩ 반려되었습니다. 다시 제출하세요.</div>' : '');
+      body = `<div class="qd">${esc(q.dialog || '')}</div><div class="qd" style="margin-top:6px; color:var(--gold)">${rewardText(q)}</div>${rej}`;
+      if (q.answerType === 'photo'){
+        body += pendingPhoto[qid]
+          ? `<img class="photoprev" src="${pendingPhoto[qid]}" alt="제출할 사진"><button onclick="submitQuest('${qid}')">이 사진 제출</button><button class="ghost" onclick="pickQuestPhoto('${qid}')">사진 다시 선택</button>`
+          : `<button onclick="pickQuestPhoto('${qid}')">📷 사진 촬영/선택</button>`;
+      } else {
+        body += `<input type="text" id="qa_${qid}" placeholder="답 입력" autocomplete="off"><button onclick="submitQuest('${qid}')">제출</button>`;
+      }
+    }
+    return `<div class="qcard"><div class="qh"><span class="qn">${esc(q.name || '퀘스트')}</span>${badge}</div>${body}</div>`;
+  }).join('');
+}
+/* 사진 선택 */
+let photoTargetQid = null;
+function pickQuestPhoto(qid){ photoTargetQid = qid; $('qPhotoPicker').value = ''; $('qPhotoPicker').click(); }
+$('qPhotoPicker').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file || !photoTargetQid) return;
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  img.onload = () => {
+    URL.revokeObjectURL(url);
+    const scale = Math.min(1, 900 / img.width);
+    const cv = document.createElement('canvas');
+    cv.width = Math.round(img.width * scale); cv.height = Math.round(img.height * scale);
+    cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+    pendingPhoto[photoTargetQid] = cv.toDataURL('image/jpeg', 0.7);
+    renderQuestList();
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); alert('이미지를 읽을 수 없습니다.'); };
+  img.src = url;
+});
+/* 제출 */
+async function submitQuest(qid){
+  const q = quests[qid]; if (!q) return;
+  let answerText = null, answerImage = null;
+  if (q.answerType === 'photo'){
+    answerImage = pendingPhoto[qid];
+    if (!answerImage) return alert('먼저 사진을 선택하세요.');
+  } else {
+    const el = $('qa_' + qid);
+    answerText = (el ? el.value : '').trim();
+    if (!answerText) return alert('답을 입력하세요.');
+  }
+  const ref = db.ref(`teams/${team}/quests/${qid}`);
+  if (q.approval === 'manual'){
+    await ref.transaction(cur => {
+      if (!cur || cur.status !== 'accepted') return;
+      return { ...cur, status: 'submitted', submittedAt: serverNow(), answerText, answerImage, by: myName, feedback: null };
+    });
+    delete pendingPhoto[qid];
+  } else {
+    /* 자동 완료 — 텍스트 정답이 설정된 경우 판정 */
+    const key = (q.answer || '').replace(/\s+/g, '').toLowerCase();
+    if (q.answerType === 'text' && key){
+      const mine = answerText.replace(/\s+/g, '').toLowerCase();
+      if (mine !== key){
+        const el = $('qa_' + qid); if (el) el.value = '';
+        return alert('정답이 아닙니다. 다시 시도해 보세요.');
+      }
+    }
+    const res = await ref.transaction(cur => {
+      if (!cur || cur.status !== 'accepted') return;
+      return { ...cur, status: 'done', doneAt: serverNow(), answerText, answerImage, by: myName };
+    });
+    delete pendingPhoto[qid];
+    if (res.committed && res.snapshot.val() && res.snapshot.val().status === 'done') grantReward(qid, q);
+  }
+}
+/* 보상 지급 (자동 완료용 — 승인 방식은 관리자가 지급) */
+async function grantReward(qid, q){
+  if (Number(q.rewardMoney) > 0)
+    db.ref(`teams/${team}/money`).transaction(cur => (cur || 0) + Number(q.rewardMoney));
+  if (q.rewardHintCode){
+    const hs = await db.ref('hints/' + q.rewardHintCode).get();
+    if (hs.exists()){
+      const h = hs.val();
+      db.ref(`teams/${team}/quests/${qid}/rewardHint`).set({
+        code: q.rewardHintCode, title: h.title || '', content: h.content || '', image: h.image || null
+      });
+    }
+  }
+}
 
 let viewsRef = null, memberRef = null, reassignRef = null;
 function attachTeamListeners(){
   const t = team;
   viewsRef = db.ref('views/' + t);
-  viewsRef.on('value', s => { myViews = s.val() || {}; renderAll(); });
+  viewsRef.on('value', s => { myViews = s.val() || {}; checkPhases(); checkQuests(); renderAll(); });
   memberRef = db.ref(`teams/${t}/members/${myToken}`);
   let first = true;
   memberRef.on('value', s => {
@@ -449,6 +818,9 @@ function renderAll(){
   $('stState').textContent = ended ? '종료' : started ? '진행중' : '대기';
   $('stState').className = 'vl' + (started && !ended ? ' live' : '');
   $('stViews').textContent = Object.keys(myViews).length;
+  const useMoney = Object.keys(quests).length > 0;
+  $('stMoneyBox').style.display = useMoney ? '' : 'none';
+  if (useMoney) $('stMoney').textContent = Number((myTeam && myTeam.money) || 0).toLocaleString();
 
   renderViewLog();
 
@@ -470,6 +842,7 @@ function renderAll(){
       : (game.startedAt && !game.endedAt ? fmtDur(serverNow() - game.startedAt) : '--:--');
     renderCooldown();
     renderViewLog();
+    checkQuests();   /* 시간 트리거 감지 */
   };
   tick(); uiTimer = setInterval(tick, 1000);
 }

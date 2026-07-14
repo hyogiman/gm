@@ -219,9 +219,11 @@ $('teamChip').onclick = () => {
 };
 
 /* ---------- 게임 상태 ---------- */
-let game = null, config = null;
+let game = null, config = null, phases = {}, quests = {};
 db.ref('game').on('value', s => { game = s.val() || {}; });
 db.ref('config').on('value', s => { config = s.val() || {}; });
+db.ref('phases').on('value', s => { phases = s.val() || {}; });
+db.ref('quests').on('value', s => { quests = s.val() || {}; });
 
 /* 관리자 강퇴/팀이동 지시 수신 */
 db.ref('reassign/' + myToken).on('value', s => {
@@ -313,6 +315,7 @@ async function submitCode(){
 
     if (result.committed){
       startReveal(code, hint, rec);                       // 최초 열람자
+      checkPhasesAfterView();
     } else if (rec && rec.token === myToken && serverNow() < rec.expireAt){
       startReveal(code, hint, rec);                       // 본인이 새로고침한 경우
     } else if (rec && serverNow() < rec.expireAt){
@@ -324,6 +327,42 @@ async function submitCode(){
     $('openBtn').disabled = false;
     $('codeMsg').textContent = '연결에 실패했습니다. 네트워크를 확인하세요.';
   }
+}
+
+/* 열람 직후 Phase/Quest 발동 조건 체크 — 도달 기록은 팀 단위 1회 (팝업은 index에서 표시) */
+async function checkPhasesAfterView(){
+  try {
+    if (!Object.keys(phases).length && !Object.keys(quests).length) return;
+    const [vs, ps, qs] = await Promise.all([
+      db.ref('views/' + team).get(),
+      db.ref(`teams/${team}/phases`).get(),
+      db.ref(`teams/${team}/quests`).get()
+    ]);
+    const viewed = new Set(Object.keys(vs.val() || {}));
+    const reached = ps.val() || {};
+    const qstate = qs.val() || {};
+    Object.entries(phases).forEach(([pid, p]) => {
+      if (reached[pid]) return;
+      const reqH = Object.keys(p.requiredHints || {});
+      const reqQ = Object.keys(p.requiredQuests || {});
+      if (!reqH.length && !reqQ.length) return;
+      const hOk = reqH.every(c => viewed.has(c));
+      const qOk = reqQ.every(qid => qstate[qid] && qstate[qid].status === 'done');
+      if (!hOk || !qOk) return;
+      db.ref(`teams/${team}/phases/${pid}`).transaction(cur => cur ? undefined : { at: serverNow() });
+    });
+    /* 퀘스트: 힌트 조건 충족 + (시간 조건 있으면 함께 판정) */
+    Object.entries(quests).forEach(([qid, q]) => {
+      if (qstate[qid]) return;
+      const reqH = Object.keys(q.triggerHints || {});
+      const hasTime = Number(q.triggerAfterMin) > 0;
+      if (!reqH.length && !hasTime) return;
+      const hOk = reqH.length ? reqH.every(c => viewed.has(c)) : true;
+      const tOk = hasTime ? (game && game.startedAt && serverNow() - game.startedAt >= Number(q.triggerAfterMin) * 60000) : true;
+      if (!hOk || !tOk) return;
+      db.ref(`teams/${team}/quests/${qid}`).transaction(cur => cur ? undefined : { status: 'offered', offeredAt: serverNow() });
+    });
+  } catch(e){ /* 조건 체크 실패는 게임 진행에 영향 없음 */ }
 }
 
 function startReveal(code, hint, rec){

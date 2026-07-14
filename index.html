@@ -205,10 +205,14 @@ td.mono{font-family:var(--mono)}
     <h1 id="joinTitle">작전에 합류합니다</h1>
     <p class="sub">운영자에게 안내받은 팀 코드를 입력하세요.</p>
     <div class="card">
+      <label>초대 코드</label>
+      <input type="text" id="joinInvite" placeholder="운영자에게 안내받은 초대 코드" autocomplete="off">
       <label>팀 코드</label>
       <input type="text" id="joinTeam" placeholder="예: TEAM1" autocomplete="off">
       <label>내 이름</label>
       <input type="text" id="joinName" placeholder="이름" autocomplete="off">
+      <label>직급/직책</label>
+      <input type="text" id="joinRole" placeholder="예: 책임, 파트장" autocomplete="off">
       <button onclick="join()">합류하기</button>
       <div class="msg" id="joinMsg"></div>
     </div>
@@ -221,8 +225,6 @@ td.mono{font-family:var(--mono)}
     <div class="tabpane on" id="tabMain">
       <div class="kicker">BRIEFING</div>
       <h1 id="gameTitle">-</h1>
-      <p class="sub" id="gameIntro"></p>
-      <img class="introimg" id="gameIntroImg" style="display:none" alt="브리핑 이미지">
 
       <div class="statusband">
         <div class="stat"><div class="lb">상태</div><div class="vl" id="stState">-</div></div>
@@ -234,6 +236,12 @@ td.mono{font-family:var(--mono)}
       <div class="card">
         <h2>📢 운영자 공지</h2>
         <div id="noticeBoard"><div class="empty">아직 공지가 없습니다.</div></div>
+      </div>
+
+      <div class="card">
+        <h2>📋 브리핑</h2>
+        <p class="sub" id="gameIntro"></p>
+        <img class="introimg" id="gameIntroImg" style="display:none" alt="브리핑 이미지">
       </div>
     </div>
 
@@ -302,8 +310,8 @@ td.mono{font-family:var(--mono)}
   <div class="tabbar-inner">
     <button class="tabbtn on" data-pane="tabMain" onclick="tabTo(this)"><span class="ic">🏠</span>메인</button>
     <button class="tabbtn" data-pane="tabHints" onclick="tabTo(this)"><span class="ic">📂</span>힌트</button>
-    <button class="tabbtn" data-pane="tabCode" onclick="tabTo(this)"><span class="ic">🔑</span>코드</button>
     <button class="tabbtn" data-pane="tabLog" onclick="tabTo(this)" id="tabLogBtn" style="display:none"><span class="ic">📜</span>기록</button>
+    <button class="tabbtn" data-pane="tabCode" onclick="tabTo(this)"><span class="ic">🔑</span>코드</button>
     <button class="tabbtn" data-pane="tabRank" onclick="tabTo(this)"><span class="ic">🏁</span>현황</button>
   </div>
 </nav>
@@ -338,6 +346,7 @@ td.mono{font-family:var(--mono)}
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 <script>
 /* ================================================================
@@ -354,6 +363,7 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+const auth = firebase.auth();
 
 const $ = id => document.getElementById(id);
 let timeOffset = 0;
@@ -363,12 +373,18 @@ const norm = s => (s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmtDur = ms => { if (ms == null || ms < 0) return '--:--'; const t = Math.floor(ms/1000); return `${String(Math.floor(t/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`; };
 const fmtClock = ms => { const d = new Date(ms); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
+/* 정답은 평문이 아닌 SHA-256 해시로만 대조 (DB에 정답이 노출되지 않음) */
+async function sha256(s){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('hh::' + s));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
-/* ---------- 세션 ---------- */
+/* ---------- 세션 (Firebase 익명 인증) ---------- */
 let team = localStorage.getItem('hh_team') || '';
 let myName = localStorage.getItem('hh_name') || '';
-let myToken = localStorage.getItem('hh_token');
-if (!myToken){ myToken = Math.random().toString(36).slice(2,10); localStorage.setItem('hh_token', myToken); }
+let myRole = localStorage.getItem('hh_role') || '';
+let myToken = null;   /* = auth uid */
+const viewerLabel = () => myRole ? `${myName} ${myRole}` : myName;
 
 function show(id){ document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); $(id).classList.add('active'); $('tabbar').classList.toggle('show', id === 'hubView'); }
 function tabTo(btn){
@@ -416,6 +432,8 @@ let uiTimer = null;
 let prevStarted = null, prevEnded = null;   /* 게임 시작/종료 팝업 감지 */
 let bootDone = false;
 
+/* 잠금 규칙 적용 시 인증 전 리스너는 거부되므로, 로그인 후에 시작 */
+function startListeners(){
 db.ref('config').on('value', s => { config = s.val() || {}; renderStatic(); renderAll(); });
 db.ref('game').on('value', s => {
   game = s.val() || {};
@@ -433,6 +451,19 @@ db.ref('teams').on('value', s => { teams = s.val() || {}; myTeam = team ? teams[
 db.ref('notices').on('value', s => { notices = s.val() || {}; renderNotices(); maybePopupNotice(); });
 db.ref('phases').on('value', s => { phases = s.val() || {}; updateLogTab(); onPhaseData(); });
 db.ref('quests').on('value', s => { quests = s.val() || {}; updateLogTab(); onQuestData(); });
+/* 관리자 팀 이동/강퇴 지시 수신 */
+db.ref('reassign/' + myToken).on('value', s => {
+  const target = s.val();
+  if (!target) return;
+  db.ref('reassign/' + myToken).remove();
+  if (target === '__KICK__'){ leaveTeam('운영자에 의해 팀에서 제외되었습니다.'); return; }
+  detachTeamListeners();
+  team = norm(target); localStorage.setItem('hh_team', team);
+  db.ref(`teams/${team}/members/${myToken}`).set({ name: myName, role: myRole, joinedAt: firebase.database.ServerValue.TIMESTAMP });
+  renderChip(); attachTeamListeners(); show('hubView'); renderAll();
+  openModal('SYSTEM', '팀이 변경되었습니다', `운영자가 회원님을 ${team} 팀으로 이동시켰습니다.`);
+});
+}   /* end startListeners */
 function updateLogTab(){
   $('tabLogBtn').style.display = (Object.keys(phases).length || Object.keys(quests).length) ? '' : 'none';
   $('questSection').style.display = Object.keys(quests).length ? '' : 'none';
@@ -447,7 +478,7 @@ function onPhaseData(){
 }
 /* 조건(힌트 열람 + 퀘스트 완료) 충족 시 팀 도달 기록 — 트랜잭션으로 1회만 */
 function checkPhases(){
-  if (!team || !Object.keys(phases).length) return;
+  if (!team || !game.startedAt || game.endedAt || !Object.keys(phases).length) return;
   const viewed = new Set(Object.keys(myViews));
   const reached = (myTeam && myTeam.phases) || {};
   const qstate = (myTeam && myTeam.quests) || {};
@@ -597,13 +628,15 @@ function openQuestDialog(qid, mode){
 }
 function closeQuestDialog(){ $('qOverlay').classList.remove('show'); renderQuestList(); }
 function acceptQuest(qid){
+  if (!game.startedAt || game.endedAt) return alert('게임이 진행 중일 때만 가능합니다.');
   db.ref(`teams/${team}/quests/${qid}`).transaction(cur => {
     if (!cur || (cur.status !== 'offered' && cur.status !== 'declined')) return;
-    return { ...cur, status: 'accepted', acceptedAt: serverNow(), by: myName };
+    return { ...cur, status: 'accepted', acceptedAt: serverNow(), by: viewerLabel() };
   });
   closeQuestDialog();
 }
 function declineQuest(qid){
+  if (!game.startedAt || game.endedAt) return alert('게임이 진행 중일 때만 가능합니다.');
   db.ref(`teams/${team}/quests/${qid}`).transaction(cur => {
     if (!cur || cur.status !== 'offered') return;
     return { ...cur, status: 'declined', declinedAt: serverNow() };
@@ -671,6 +704,7 @@ $('qPhotoPicker').addEventListener('change', e => {
 /* 제출 */
 async function submitQuest(qid){
   const q = quests[qid]; if (!q) return;
+  if (!game.startedAt || game.endedAt) return alert('게임이 진행 중일 때만 가능합니다.');
   let answerText = null, answerImage = null;
   if (q.answerType === 'photo'){
     answerImage = pendingPhoto[qid];
@@ -684,22 +718,21 @@ async function submitQuest(qid){
   if (q.approval === 'manual'){
     await ref.transaction(cur => {
       if (!cur || cur.status !== 'accepted') return;
-      return { ...cur, status: 'submitted', submittedAt: serverNow(), answerText, answerImage, by: myName, feedback: null };
+      return { ...cur, status: 'submitted', submittedAt: serverNow(), answerText, answerImage, by: viewerLabel(), feedback: null };
     });
     delete pendingPhoto[qid];
   } else {
-    /* 자동 완료 — 텍스트 정답이 설정된 경우 판정 */
-    const key = (q.answer || '').replace(/\s+/g, '').toLowerCase();
-    if (q.answerType === 'text' && key){
-      const mine = answerText.replace(/\s+/g, '').toLowerCase();
-      if (mine !== key){
+    /* 자동 완료 — 정답 해시가 설정된 경우 판정 (DB에 평문 정답 없음) */
+    if (q.answerType === 'text' && q.answerHash){
+      const mine = await sha256(answerText.replace(/\s+/g, '').toLowerCase());
+      if (mine !== q.answerHash){
         const el = $('qa_' + qid); if (el) el.value = '';
         return alert('정답이 아닙니다. 다시 시도해 보세요.');
       }
     }
     const res = await ref.transaction(cur => {
       if (!cur || cur.status !== 'accepted') return;
-      return { ...cur, status: 'done', doneAt: serverNow(), answerText, answerImage, by: myName };
+      return { ...cur, status: 'done', doneAt: serverNow(), answerText, answerImage, by: viewerLabel() };
     });
     delete pendingPhoto[qid];
     if (res.committed && res.snapshot.val() && res.snapshot.val().status === 'done') grantReward(qid, q);
@@ -746,34 +779,31 @@ function detachTeamListeners(){
   viewsRef = memberRef = null; myViews = {};
 }
 
-/* 팀 이동 지시 수신 */
-db.ref('reassign/' + myToken).on('value', s => {
-  const target = s.val();
-  if (!target) return;
-  db.ref('reassign/' + myToken).remove();
-  if (target === '__KICK__'){ leaveTeam('운영자에 의해 팀에서 제외되었습니다.'); return; }
-  detachTeamListeners();
-  team = norm(target); localStorage.setItem('hh_team', team);
-  db.ref(`teams/${team}/members/${myToken}`).set({ name: myName, joinedAt: firebase.database.ServerValue.TIMESTAMP });
-  renderChip(); attachTeamListeners(); show('hubView'); renderAll();
-  openModal('SYSTEM', '팀이 변경되었습니다', `운영자가 회원님을 ${team} 팀으로 이동시켰습니다.`);
-});
+/* 팀 이동 지시는 startListeners() 내부에서 수신 */
 
 /* ---------- 합류 ---------- */
 async function join(){
   const t = norm($('joinTeam').value);
   const n = $('joinName').value.trim();
+  const r = $('joinRole').value.trim();
   if (!t) return $('joinMsg').textContent = '팀 코드를 입력하세요.';
   if (!n) return $('joinMsg').textContent = '이름을 입력하세요.';
+  if (!r) return $('joinMsg').textContent = '직급/직책을 입력하세요.';
   $('joinMsg').textContent = '확인 중...';
+  /* 초대 코드 검증 (해시 대조 — DB에 평문 없음) */
+  if (config.inviteCodeHash){
+    const iv = norm($('joinInvite').value);
+    if (!iv || await sha256(iv) !== config.inviteCodeHash)
+      return $('joinMsg').textContent = '초대 코드가 올바르지 않습니다.';
+  }
   const snap = await db.ref('teams/' + t).get();
   if (!snap.exists()){
     if (config.allowSelfJoin === false) return $('joinMsg').textContent = '등록되지 않은 팀입니다. 운영자에게 확인하세요.';
     await db.ref('teams/' + t).set({ name: t, createdAt: firebase.database.ServerValue.TIMESTAMP, wrongCount: 0 });
   }
-  team = t; myName = n;
-  localStorage.setItem('hh_team', t); localStorage.setItem('hh_name', n);
-  await db.ref(`teams/${t}/members/${myToken}`).set({ name: n, joinedAt: firebase.database.ServerValue.TIMESTAMP });
+  team = t; myName = n; myRole = r;
+  localStorage.setItem('hh_team', t); localStorage.setItem('hh_name', n); localStorage.setItem('hh_role', r);
+  await db.ref(`teams/${t}/members/${myToken}`).set({ name: n, role: r, joinedAt: firebase.database.ServerValue.TIMESTAMP });
   renderChip(); attachTeamListeners(); show('hubView'); renderAll(); maybePopupNotice();
 }
 
@@ -869,7 +899,7 @@ function renderCooldown(){
   $('finalBtn').disabled = !!locked;
   $('finalInput').disabled = !!locked;
   if (globalLock) $('cooldownBox').textContent = '운영자가 코드 입력을 잠갔습니다';
-  else if (teamLock) $('cooldownBox').textContent = `오답 잠금 — ${fmtDur(until - serverNow())} 후 다시 시도할 수 있습니다`;
+  else if (teamLock) $('cooldownBox').textContent = `잠금 페널티 — ${fmtDur(until - serverNow())} 후 다시 시도할 수 있습니다`;
 }
 
 function myRankText(){
@@ -879,23 +909,24 @@ function myRankText(){
 }
 
 function renderRank(){
-  const list = Object.entries(teams).map(([id, t]) => ({ id, fin: !!t.finishedAt, elapsed: t.elapsedMs ?? Infinity, views: 0 }));
-  db.ref('views').get().then(s => {
-    const all = s.val() || {};
-    list.forEach(t => t.views = all[t.id] ? Object.keys(all[t.id]).length : 0);
-    list.sort((a,b) => (a.fin === b.fin) ? (a.fin ? a.elapsed - b.elapsed : b.views - a.views) : (a.fin ? -1 : 1));
-    let rank = 0;
-    $('rankBoard').innerHTML = !list.length ? '<div class="empty">등록된 팀이 없습니다.</div>' :
-      `<table><thead><tr><th>순위</th><th>팀</th><th>기록</th><th>힌트</th></tr></thead><tbody>` +
-      list.map(t => {
-        const r = t.fin ? ++rank : '-';
-        return `<tr class="${t.id === team ? 'me' : ''}">
-          <td class="mono">${r === 1 ? '🏆 1' : r}</td>
-          <td>${esc(t.id)}</td>
-          <td class="mono">${t.fin ? fmtDur(t.elapsed) : '진행중'}</td>
-          <td class="mono">${t.views}</td></tr>`;
-      }).join('') + '</tbody></table>';
+  const usePhase = Object.keys(phases).length > 0;
+  const list = Object.entries(teams).map(([id, t]) => {
+    const orders = Object.keys(t.phases || {}).map(pid => (phases[pid] && phases[pid].order) || 0);
+    return { id, fin: !!t.finishedAt, elapsed: t.elapsedMs ?? Infinity,
+             phase: orders.length ? Math.max(...orders) : 0 };
   });
+  list.sort((a,b) => (a.fin === b.fin) ? (a.fin ? a.elapsed - b.elapsed : b.phase - a.phase) : (a.fin ? -1 : 1));
+  let rank = 0;
+  $('rankBoard').innerHTML = !list.length ? '<div class="empty">등록된 팀이 없습니다.</div>' :
+    `<table><thead><tr><th>순위</th><th>팀</th>${usePhase ? '<th>Phase</th>' : ''}<th>기록</th></tr></thead><tbody>` +
+    list.map(t => {
+      const r = t.fin ? ++rank : '-';
+      return `<tr class="${t.id === team ? 'me' : ''}">
+        <td class="mono">${r === 1 ? '🏆 1' : r}</td>
+        <td>${esc(t.id)}</td>
+        ${usePhase ? `<td class="mono">${t.phase ? 'P' + t.phase : '-'}</td>` : ''}
+        <td class="mono">${t.fin ? fmtDur(t.elapsed) : '진행중'}</td></tr>`;
+    }).join('') + '</tbody></table>';
 }
 
 /* ---------- 최종 코드 ---------- */
@@ -911,17 +942,17 @@ async function submitFinal(){
   if (t.finishedAt) return;
   if (t.lockedUntil && serverNow() < t.lockedUntil){ myTeam = t; renderCooldown(); return; }
 
-  const answer = norm(config.finalCode || '');
-  if (!answer) return $('finalMsg').textContent = '최종 코드가 아직 설정되지 않았습니다. 운영자에게 문의하세요.';
+  if (!config.finalCodeHash) return $('finalMsg').textContent = '최종 코드가 아직 설정되지 않았습니다. 운영자에게 문의하세요.';
 
-  if (input === answer){
+  const inputHash = await sha256(input);
+  if (inputHash === config.finalCodeHash){
     const ref = db.ref('teams/' + team);
     const res = await ref.transaction(cur => {
       if (!cur || cur.finishedAt) return cur;
       const now = serverNow();
       return { ...cur, finishedAt: now, elapsedMs: now - game.startedAt };
     });
-    db.ref('attempts/' + team).push({ code: input, correct: true, by: myName, at: firebase.database.ServerValue.TIMESTAMP });
+    db.ref('attempts/' + team).push({ code: input, correct: true, by: viewerLabel(), at: firebase.database.ServerValue.TIMESTAMP });
     if (res.committed){ $('finalMsg').textContent = ''; $('finalInput').value = ''; }
   } else {
     const cooldownSec = Number(config.cooldownSec) || 180;
@@ -929,7 +960,7 @@ async function submitFinal(){
       lockedUntil: serverNow() + cooldownSec * 1000,
       wrongCount: (t.wrongCount || 0) + 1
     });
-    db.ref('attempts/' + team).push({ code: input, correct: false, by: myName, at: firebase.database.ServerValue.TIMESTAMP });
+    db.ref('attempts/' + team).push({ code: input, correct: false, by: viewerLabel(), at: firebase.database.ServerValue.TIMESTAMP });
     $('finalMsg').textContent = '틀린 코드입니다.';
     $('finalInput').value = '';
   }
@@ -938,21 +969,30 @@ async function submitFinal(){
 $('finalInput').addEventListener('keydown', e => { if (e.key === 'Enter') submitFinal(); });
 $('joinName').addEventListener('keydown', e => { if (e.key === 'Enter') join(); });
 
-/* ---------- 초기 진입 ---------- */
-window.addEventListener('load', async () => {
+/* ---------- 초기 진입 (익명 인증 후) ---------- */
+let started_ = false;
+auth.onAuthStateChanged(u => {
+  if (!u){ auth.signInAnonymously().catch(() => { $('teamChip').textContent = '연결 실패 — 새로고침'; }); return; }
+  myToken = u.uid;
+  if (started_) return;
+  started_ = true;
+  initAfterAuth();
+});
+async function initAfterAuth(){
   renderChip();
+  startListeners();
   await Promise.all([
     db.ref('config').get().then(s => { config = s.val() || {}; renderStatic(); }),
     db.ref('game').get().then(s => { game = s.val() || {}; prevStarted = !!game.startedAt; prevEnded = !!game.endedAt; })
-  ]);
+  ]).catch(() => {});
   bootDone = true;
   if (team){
     /* 세션 복원 시 멤버 등록 유지 */
-    db.ref(`teams/${team}/members/${myToken}`).update({ name: myName });
+    db.ref(`teams/${team}/members/${myToken}`).update({ name: myName, role: myRole });
     attachTeamListeners(); show('hubView'); renderAll(); maybePopupNotice();
   }
   else show('joinView');
-});
+}
 </script>
 </body>
 </html>

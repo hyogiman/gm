@@ -223,6 +223,24 @@ let game = null, config = null;
 db.ref('game').on('value', s => { game = s.val() || {}; });
 db.ref('config').on('value', s => { config = s.val() || {}; });
 
+/* 관리자 강퇴/팀이동 지시 수신 */
+db.ref('reassign/' + myToken).on('value', s => {
+  const target = s.val();
+  if (!target) return;
+  db.ref('reassign/' + myToken).remove();
+  clearInterval(revealTimer);
+  if (target === '__KICK__'){
+    team = ''; localStorage.removeItem('hh_team'); renderChip();
+    alert('운영자에 의해 팀에서 제외되었습니다.');
+    show('joinView'); return;
+  }
+  team = norm(target); localStorage.setItem('hh_team', team);
+  db.ref(`teams/${team}/members/${myToken}`).set({ name: myName, joinedAt: firebase.database.ServerValue.TIMESTAMP });
+  renderChip();
+  alert(`운영자가 회원님을 ${team} 팀으로 이동시켰습니다.`);
+  if (gameGate()) showCode();
+});
+
 function gameGate(){
   if (!game || !game.startedAt){
     $('stateKicker').textContent = 'STANDBY';
@@ -254,6 +272,7 @@ async function join(){
   }
   team = t; myName = n;
   localStorage.setItem('hh_team', t); localStorage.setItem('hh_name', n);
+  await db.ref(`teams/${t}/members/${myToken}`).set({ name: n, joinedAt: firebase.database.ServerValue.TIMESTAMP });
   renderChip();
   if (gameGate()) showCode();
 }
@@ -312,7 +331,8 @@ function startReveal(code, hint, rec){
   $('rvTitle').textContent = hint.title || '';
   $('rvTitle').style.display = hint.title ? '' : 'none';
   $('rvText').textContent = hint.content || '';
-  if (hint.imageUrl){ $('rvImg').src = hint.imageUrl; $('rvImg').style.display = ''; }
+  const imgSrc = hint.image || hint.imageUrl;
+  if (imgSrc){ $('rvImg').src = imgSrc; $('rvImg').style.display = ''; }
   else { $('rvImg').style.display = 'none'; }
   show('revealView');
 

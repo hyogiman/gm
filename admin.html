@@ -28,21 +28,21 @@ h1{font-size:24px; font-weight:700; margin-bottom:6px}
 h2{font-size:15px; font-weight:700; margin-bottom:12px}
 .sub{color:var(--dim); font-size:13px; line-height:1.7; word-break:keep-all}
 
-/* 게임 제어 밴드 */
-.ctrlband{display:flex; gap:10px; flex-wrap:wrap; align-items:center; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:18px}
+.ctrlband{display:flex; gap:8px; flex-wrap:wrap; align-items:center; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:18px}
 .ctrlband .state{font-family:var(--mono); font-size:13px; letter-spacing:.1em; margin-right:auto}
 .state b{color:var(--gold)}
 .state .done{color:var(--green)}
-.btn{padding:10px 16px; border:none; border-radius:9px; cursor:pointer; font-family:var(--sans); font-size:14px; font-weight:700; background:var(--gold); color:#1A1408}
+.btn{padding:10px 15px; border:none; border-radius:9px; cursor:pointer; font-family:var(--sans); font-size:14px; font-weight:700; background:var(--gold); color:#1A1408}
 .btn:active{transform:translateY(1px)}
 .btn.ghost{background:transparent; border:1px solid var(--line); color:var(--dim); font-weight:500}
+.btn.ghost.on{border-color:var(--red); color:var(--red); font-weight:700}
 .btn.danger{background:transparent; border:1px solid var(--red); color:var(--red); font-weight:500}
-.btn.small{padding:7px 12px; font-size:12px}
+.btn.small{padding:6px 11px; font-size:12px}
+.btn.tiny{padding:4px 8px; font-size:11px; border-radius:7px}
 .btn:disabled{opacity:.4; cursor:not-allowed}
 
-/* 탭 */
 .tabs{display:flex; gap:6px; margin-bottom:18px; flex-wrap:wrap}
-.tab{padding:10px 16px; border-radius:9px; border:1px solid var(--line); background:transparent; color:var(--dim); font-size:14px; cursor:pointer; font-family:var(--sans)}
+.tab{padding:10px 15px; border-radius:9px; border:1px solid var(--line); background:transparent; color:var(--dim); font-size:14px; cursor:pointer; font-family:var(--sans)}
 .tab.on{background:var(--panel2); color:var(--paper); border-color:var(--gold-soft); font-weight:700}
 .pane{display:none} .pane.on{display:block; animation:fadein .25s ease}
 @keyframes fadein{from{opacity:0}to{opacity:1}}
@@ -51,7 +51,7 @@ h2{font-size:15px; font-weight:700; margin-bottom:12px}
 .grid2{display:grid; grid-template-columns:1fr 1fr; gap:0 18px}
 @media(max-width:680px){.grid2{grid-template-columns:1fr}}
 label{display:block; font-family:var(--mono); font-size:11px; letter-spacing:.14em; color:var(--dim); margin:13px 0 6px}
-input[type=text],input[type=number],input[type=password],textarea,select{
+input[type=text],input[type=number],input[type=password],textarea{
   width:100%; background:var(--panel2); border:1px solid var(--line); border-radius:9px;
   color:var(--paper); font-size:14px; padding:11px 12px; outline:none; font-family:var(--sans);
 }
@@ -60,10 +60,21 @@ input:focus,textarea:focus{border-color:var(--gold-soft)}
 .mono{font-family:var(--mono)}
 .msg{margin-top:10px; font-size:13px; color:var(--green); min-height:16px}
 .msg.err{color:var(--red)}
-.inline{display:flex; gap:8px; align-items:center}
-.inline input{flex:1}
+.inline{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+.inline input{flex:1; min-width:160px}
 .check{display:flex; align-items:center; gap:8px; margin-top:13px; font-size:14px; color:var(--dim); cursor:pointer}
 .check input{width:auto}
+
+/* 이미지 업로드 */
+.imgup{margin-top:6px}
+.imgup .drop{
+  border:1px dashed var(--line); border-radius:10px; padding:14px; text-align:center;
+  color:var(--dim); font-size:13px; cursor:pointer;
+}
+.imgup .drop:hover{border-color:var(--gold-soft); color:var(--paper)}
+.imgup .prev{position:relative; margin-top:10px; display:none}
+.imgup .prev img{width:100%; max-width:340px; border-radius:10px; border:1px solid var(--line); display:block}
+.imgup .prev .rm{position:absolute; top:8px; left:8px; margin:0; width:auto}
 
 table{width:100%; border-collapse:collapse; font-size:13px}
 th{font-family:var(--mono); font-size:10px; letter-spacing:.12em; color:var(--dim); text-align:left; padding:8px 6px; border-bottom:1px solid var(--line); font-weight:500}
@@ -80,6 +91,24 @@ td .memo{color:var(--dim); font-size:12px}
 .feedrow{display:flex; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); font-size:13px; align-items:baseline}
 .feedrow .t{font-family:var(--mono); font-size:11px; color:var(--dim); min-width:44px}
 .feedrow .c{font-family:var(--mono); font-weight:700; color:var(--gold)}
+
+/* 팀 통제 블록 */
+.teamblock{border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-top:12px; background:var(--panel2)}
+.teamblock .thead{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+.teamblock .tid{font-family:var(--mono); font-weight:700; letter-spacing:.12em; font-size:15px}
+.teamblock .tbtns{margin-left:auto; display:flex; gap:6px; flex-wrap:wrap}
+.memberchip{
+  display:inline-flex; align-items:center; gap:7px; border:1px solid var(--line); border-radius:8px;
+  padding:6px 8px 6px 11px; margin:8px 8px 0 0; font-size:13px; background:var(--panel);
+}
+.memberchip .mb{padding:2px 7px; margin:0; width:auto}
+
+/* 공지 */
+.noticerow{border-bottom:1px solid var(--line); padding:12px 0}
+.noticerow:last-child{border-bottom:none}
+.noticerow .nt{font-family:var(--mono); font-size:11px; color:var(--dim); margin-bottom:5px; display:flex; justify-content:space-between; align-items:center}
+.noticerow .nb{font-size:13px; line-height:1.7; white-space:pre-wrap}
+.noticerow img{max-width:200px; border-radius:8px; margin-top:8px; border:1px solid var(--line); display:block}
 
 /* 인쇄 영역 */
 #printArea{display:none}
@@ -137,25 +166,34 @@ td .memo{color:var(--dim); font-size:12px}
     <span class="state" id="gameState">상태 확인 중...</span>
     <button class="btn" id="btnStart" onclick="startGame()">▶ 게임 시작</button>
     <button class="btn ghost" id="btnEnd" onclick="endGame()">■ 게임 종료</button>
+    <button class="btn ghost" id="btnLockAll" onclick="toggleFinalLock()">🔒 코드입력 전체잠금</button>
     <button class="btn danger" onclick="resetProgress()">진행 기록 초기화</button>
+    <button class="btn danger" onclick="fullReset()">⚠ 전체 리셋</button>
   </div>
 
   <div class="tabs">
     <button class="tab on" data-pane="paneSetting" onclick="tabTo(this)">① 게임 설정</button>
     <button class="tab" data-pane="paneHints" onclick="tabTo(this)">② 힌트 관리</button>
     <button class="tab" data-pane="panePrint" onclick="tabTo(this)">③ QR 인쇄</button>
-    <button class="tab" data-pane="paneLive" onclick="tabTo(this)">④ 운영 현황</button>
+    <button class="tab" data-pane="paneTeams" onclick="tabTo(this)">④ 팀 통제</button>
+    <button class="tab" data-pane="paneNotice" onclick="tabTo(this)">⑤ 공지</button>
+    <button class="tab" data-pane="paneLive" onclick="tabTo(this)">⑥ 운영 현황</button>
   </div>
 
   <!-- ① 게임 설정 -->
   <div class="pane on" id="paneSetting">
     <div class="card">
       <h2>시나리오 설정</h2>
-      <p class="sub">이 도구는 범용 틀입니다. 제목과 브리핑 문구만 바꾸면 공장 트러블, 살인사건, 보물찾기 등 어떤 시나리오로도 운영할 수 있습니다.</p>
+      <p class="sub">이 도구는 범용 틀입니다. 제목과 브리핑만 바꾸면 공장 트러블, 살인사건, 보물찾기 등 어떤 시나리오로도 운영할 수 있습니다.</p>
       <label>게임 제목</label>
       <input type="text" id="cfgTitle" placeholder="예: 사라진 설계도를 찾아라">
-      <label>브리핑(인트로) 문구 — 팀 화면 상단에 표시</label>
+      <label>브리핑(인트로) 문구 — 팀 화면 메인에 표시</label>
       <textarea id="cfgIntro" placeholder="예: 어젯밤 공장 제어실에서 핵심 설계도가 사라졌다. 현장 곳곳에 남은 단서를 찾아, 금고를 여는 최종 코드를 알아내라."></textarea>
+      <label>브리핑 이미지 (선택 — 인트로 문구 아래에 표시)</label>
+      <div class="imgup" id="up_intro">
+        <div class="drop" onclick="pickImage('intro')">이미지 선택 또는 촬영 (자동 압축)</div>
+        <div class="prev"><button class="btn danger tiny rm" onclick="clearImage('intro')">제거</button><img alt="미리보기"></div>
+      </div>
       <div class="grid2">
         <div>
           <label>최종 코드 (정답)</label>
@@ -174,19 +212,9 @@ td .memo{color:var(--dim); font-size:12px}
           <input type="text" id="cfgSuccess" placeholder="예: 금고가 열렸다! 팀의 승리를 축하합니다.">
         </div>
       </div>
-      <label class="check"><input type="checkbox" id="cfgSelfJoin" checked> 팀 자유 등록 허용 (끄면 아래에서 미리 만든 팀만 입장 가능)</label>
+      <label class="check"><input type="checkbox" id="cfgSelfJoin" checked> 팀 자유 등록 허용 (끄면 팀 통제 탭에서 미리 만든 팀만 입장 가능)</label>
       <button class="btn" style="margin-top:18px" onclick="saveConfig()">설정 저장</button>
       <div class="msg" id="cfgMsg"></div>
-    </div>
-
-    <div class="card">
-      <h2>팀 관리</h2>
-      <div class="inline">
-        <input type="text" id="newTeamId" class="mono" placeholder="팀 코드 (예: TEAM1)">
-        <button class="btn small" onclick="addTeam()">팀 추가</button>
-      </div>
-      <div id="teamAdminList" style="margin-top:14px"><div class="empty">등록된 팀이 없습니다.</div></div>
-      <button class="btn danger small" style="margin-top:12px" onclick="deleteAllTeams()">모든 팀 삭제</button>
     </div>
   </div>
 
@@ -211,8 +239,11 @@ td .memo{color:var(--dim); font-size:12px}
       <input type="text" id="hTitle" placeholder="예: 야간 근무일지의 한 줄">
       <label>힌트 내용</label>
       <textarea id="hContent" placeholder="참가자에게 보여줄 내용. 줄바꿈이 그대로 표시됩니다."></textarea>
-      <label>이미지 URL (선택)</label>
-      <input type="text" id="hImage" placeholder="https:// 이미지를 힌트 아래에 함께 표시">
+      <label>힌트 이미지 (선택)</label>
+      <div class="imgup" id="up_hint">
+        <div class="drop" onclick="pickImage('hint')">이미지 선택 또는 촬영 (자동 압축)</div>
+        <div class="prev"><button class="btn danger tiny rm" onclick="clearImage('hint')">제거</button><img alt="미리보기"></div>
+      </div>
       <label>숨긴 위치 메모 (운영자 전용 — 참가자에게 보이지 않음)</label>
       <input type="text" id="hMemo" placeholder="예: 2층 복도 소화기 뒤">
       <div class="inline" style="margin-top:18px">
@@ -239,7 +270,7 @@ td .memo{color:var(--dim); font-size:12px}
         <button class="btn ghost small" onclick="autoHintUrl()">현재 주소로</button>
       </div>
       <label class="check"><input type="checkbox" id="prShowTitle" checked> 카드에 힌트 제목 함께 인쇄</label>
-      <div class="inline" style="margin-top:18px; flex-wrap:wrap">
+      <div class="inline" style="margin-top:18px">
         <button class="btn" onclick="printCards()">🖨 QR 카드 인쇄 (A4 · 2열 자동 배치)</button>
         <button class="btn ghost" onclick="printMap()">📋 운영자 배치표 인쇄</button>
       </div>
@@ -247,7 +278,42 @@ td .memo{color:var(--dim); font-size:12px}
     </div>
   </div>
 
-  <!-- ④ 운영 현황 -->
+  <!-- ④ 팀 통제 -->
+  <div class="pane" id="paneTeams">
+    <div class="card">
+      <h2>팀 추가</h2>
+      <div class="inline">
+        <input type="text" id="newTeamId" class="mono" placeholder="팀 코드 (예: TEAM1)">
+        <button class="btn small" onclick="addTeam()">팀 추가</button>
+        <button class="btn danger small" onclick="deleteAllTeams()">모든 팀 삭제</button>
+      </div>
+      <p class="sub" style="margin-top:12px">팀원 옆의 <b>이동</b>은 다른 팀 코드로 즉시 재배치하고, <b>강퇴</b>는 팀에서 내보냅니다. 참가자 화면에 실시간 반영됩니다. <b>+3분 잠금</b>은 해당 팀의 최종 코드 입력을 페널티로 잠급니다.</p>
+    </div>
+    <div id="teamCtrlList"><div class="empty card">등록된 팀이 없습니다.</div></div>
+  </div>
+
+  <!-- ⑤ 공지 -->
+  <div class="pane" id="paneNotice">
+    <div class="card">
+      <h2>공지 발송</h2>
+      <p class="sub">발송 즉시 모든 참가자 화면에 팝업으로 표시되고, 메인 탭 공지 게시판에 쌓입니다.</p>
+      <label>공지 내용</label>
+      <textarea id="nText" placeholder="예: 3층 힌트 위치가 변경되었습니다. 안내데스크 옆을 확인하세요."></textarea>
+      <label>공지 이미지 (선택)</label>
+      <div class="imgup" id="up_notice">
+        <div class="drop" onclick="pickImage('notice')">이미지 선택 또는 촬영 (자동 압축)</div>
+        <div class="prev"><button class="btn danger tiny rm" onclick="clearImage('notice')">제거</button><img alt="미리보기"></div>
+      </div>
+      <button class="btn" style="margin-top:16px" onclick="sendNotice()">📢 공지 발송</button>
+      <div class="msg" id="nMsg"></div>
+    </div>
+    <div class="card">
+      <h2>발송된 공지</h2>
+      <div id="noticeAdminList"><div class="empty">발송된 공지가 없습니다.</div></div>
+    </div>
+  </div>
+
+  <!-- ⑥ 운영 현황 -->
   <div class="pane" id="paneLive">
     <div class="card">
       <h2>팀 현황 <span class="badge" id="liveClock">--:--</span></h2>
@@ -270,13 +336,14 @@ td .memo{color:var(--dim); font-size:12px}
 
 <!-- 인쇄 전용 영역 -->
 <div id="printArea"></div>
+<input type="file" id="filePicker" accept="image/*" style="display:none">
 
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 /* ================================================================
-   ★ Firebase 설정 — 세 파일(index/hint/admin) 모두 동일하게 교체
+   ★ Firebase 설정 — 세 파일(index/hint/admin) 공통
 ================================================================ */
 const firebaseConfig = {
   apiKey: "AIzaSyCCxRR6hXvk9Z17eK8H_Vov_TbGX8LzvDs",
@@ -321,19 +388,60 @@ function tabTo(btn){
   document.querySelectorAll('.pane').forEach(p => p.classList.remove('on'));
   btn.classList.add('on');
   $(btn.dataset.pane).classList.add('on');
+  renderLive();
 }
 
+/* ---------- 이미지 업로드 (리사이즈 → dataURL) ---------- */
+const images = { intro: null, hint: null, notice: null };   /* dataURL 저장 */
+let pickTarget = null;
+function pickImage(target){ pickTarget = target; $('filePicker').value = ''; $('filePicker').click(); }
+$('filePicker').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  if (!file || !pickTarget) return;
+  try {
+    const data = await resizeImage(file, 900, 0.72);
+    if (data.length > 900 * 1024){ alert('압축 후에도 이미지가 너무 큽니다. 더 작은 이미지를 사용하세요.'); return; }
+    setImage(pickTarget, data);
+  } catch(err){ alert('이미지 처리에 실패했습니다: ' + err.message); }
+});
+function resizeImage(file, maxW, quality){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, maxW / img.width);
+      const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+      const cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      cv.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(cv.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('이미지를 읽을 수 없습니다')); };
+    img.src = url;
+  });
+}
+function setImage(target, dataURL){
+  images[target] = dataURL;
+  const box = $('up_' + target);
+  const prev = box.querySelector('.prev');
+  if (dataURL){ prev.querySelector('img').src = dataURL; prev.style.display = 'block'; }
+  else prev.style.display = 'none';
+}
+function clearImage(target){ setImage(target, null); }
+
 /* ---------- 전역 상태 ---------- */
-let config = {}, game = {}, hints = {}, teams = {}, views = {}, attempts = {};
+let config = {}, game = {}, hints = {}, teams = {}, views = {}, attempts = {}, notices = {};
 let liveTimer = null;
 
 function boot(){
-  db.ref('config').on('value', s => { config = s.val() || {}; fillConfig(); });
+  db.ref('config').on('value', s => { config = s.val() || {}; fillConfig(); renderLockBtn(); });
   db.ref('game').on('value', s => { game = s.val() || {}; renderGameState(); });
   db.ref('hints').on('value', s => { hints = s.val() || {}; renderHints(); });
-  db.ref('teams').on('value', s => { teams = s.val() || {}; renderTeamsAdmin(); renderLive(); });
+  db.ref('teams').on('value', s => { teams = s.val() || {}; renderTeamCtrl(); renderLive(); });
   db.ref('views').on('value', s => { views = s.val() || {}; renderLive(); renderFeeds(); });
   db.ref('attempts').on('value', s => { attempts = s.val() || {}; renderFeeds(); });
+  db.ref('notices').on('value', s => { notices = s.val() || {}; renderNoticeAdmin(); });
   clearInterval(liveTimer);
   liveTimer = setInterval(() => { renderGameState(); renderLive(); }, 1000);
 }
@@ -352,10 +460,13 @@ function renderGameState(){
 }
 function startGame(){
   if (game.startedAt && !game.endedAt) return;
-  if (game.endedAt && !confirm('종료된 게임을 새로 시작합니다. 진행 기록(열람·완료)을 초기화할까요?\n확인 = 초기화 후 시작 / 취소 = 그냥 시작')) {
-    db.ref('game').set({ startedAt: serverNow() }); return;
+  if (game.endedAt){
+    if (confirm('종료된 게임을 새로 시작합니다. 진행 기록(열람·완료)을 초기화할까요?\n확인 = 초기화 후 시작 / 취소 = 기록 유지한 채 시작'))
+      wipeProgress().then(() => db.ref('game').set({ startedAt: serverNow() }));
+    else db.ref('game').set({ startedAt: serverNow() });
+    return;
   }
-  if (game.endedAt) { wipeProgress().then(() => db.ref('game').set({ startedAt: serverNow() })); return; }
+  if (!confirm('게임을 시작할까요? 모든 참가자에게 시작 알림이 표시됩니다.')) return;
   db.ref('game').set({ startedAt: serverNow() });
 }
 function endGame(){
@@ -377,11 +488,30 @@ async function wipeProgress(){
   await db.ref().update(updates);
 }
 function resetProgress(){
-  if (!confirm('열람 기록·완료 기록·오답 기록을 모두 초기화합니다. 힌트와 팀, 설정은 유지됩니다. 진행할까요?')) return;
+  if (!confirm('열람 기록·완료 기록·오답 기록을 모두 초기화합니다. 힌트와 팀, 설정, 공지는 유지됩니다. 진행할까요?')) return;
   wipeProgress().then(() => db.ref('game').remove());
+}
+function fullReset(){
+  const typed = prompt('⚠ 전체 리셋: 힌트, 팀, 진행 기록, 공지, 시나리오 설정이 모두 삭제됩니다.\n계속하려면 RESET 을 입력하세요.');
+  if (typed !== 'RESET') return;
+  Promise.all([
+    db.ref('hints').remove(), db.ref('teams').remove(), db.ref('views').remove(),
+    db.ref('attempts').remove(), db.ref('notices').remove(), db.ref('game').remove(),
+    db.ref('reassign').remove(), db.ref('config').remove()
+  ]).then(() => { alert('전체 리셋이 완료되었습니다.'); location.reload(); });
+}
+function toggleFinalLock(){
+  db.ref('config/finalLocked').set(!(config.finalLocked === true));
+}
+function renderLockBtn(){
+  const on = config.finalLocked === true;
+  const b = $('btnLockAll');
+  b.textContent = on ? '🔓 코드입력 잠금 해제' : '🔒 코드입력 전체잠금';
+  b.classList.toggle('on', on);
 }
 
 /* ---------- 설정 ---------- */
+let introFilled = false;
 function fillConfig(){
   const ae = document.activeElement;
   if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA') && ae.closest('#paneSetting')) return;
@@ -393,12 +523,14 @@ function fillConfig(){
   $('cfgSuccess').value = config.successMessage || '';
   $('cfgSelfJoin').checked = config.allowSelfJoin !== false;
   if (!$('cfgHintUrl').value) $('cfgHintUrl').value = config.hintUrl || '';
+  if (!introFilled){ setImage('intro', config.introImage || null); introFilled = true; }
 }
 function saveConfig(){
   const finalCode = norm($('cfgFinal').value);
   db.ref('config').update({
     title: $('cfgTitle').value.trim(),
     intro: $('cfgIntro').value.trim(),
+    introImage: images.intro || null,
     finalCode,
     cooldownSec: Number($('cfgCooldown').value) || 180,
     defaultViewSec: Number($('cfgViewSec').value) || 30,
@@ -411,7 +543,7 @@ function saveConfig(){
   });
 }
 
-/* ---------- 팀 관리 ---------- */
+/* ---------- 팀 통제 ---------- */
 function addTeam(){
   const id = norm($('newTeamId').value);
   if (!id) return;
@@ -419,26 +551,92 @@ function addTeam(){
     .then(r => { if (!r.committed) alert('이미 존재하는 팀입니다.'); else $('newTeamId').value = ''; });
 }
 function delTeam(id){
-  if (!confirm(`${id} 팀을 삭제할까요? 열람 기록도 함께 삭제됩니다.`)) return;
+  if (!confirm(`${id} 팀을 삭제할까요? 팀원과 열람 기록도 함께 삭제됩니다.`)) return;
   db.ref('teams/' + id).remove(); db.ref('views/' + id).remove(); db.ref('attempts/' + id).remove();
 }
 function deleteAllTeams(){
   if (!confirm('모든 팀과 팀별 기록을 삭제합니다. 진행할까요?')) return;
   db.ref('teams').remove(); db.ref('views').remove(); db.ref('attempts').remove();
 }
-function renderTeamsAdmin(){
+function kickMember(teamId, token, name){
+  if (!confirm(`${name}님을 ${teamId} 팀에서 내보낼까요?`)) return;
+  db.ref('reassign/' + token).set('__KICK__');
+  db.ref(`teams/${teamId}/members/${token}`).remove();
+}
+function moveMember(teamId, token, name){
+  const target = norm(prompt(`${name}님을 이동시킬 팀 코드를 입력하세요:`) || '');
+  if (!target) return;
+  if (target === teamId) return alert('같은 팀입니다.');
+  if (!teams[target]) return alert(`${target} 팀이 없습니다. 먼저 팀을 추가하세요.`);
+  db.ref(`teams/${target}/members/${token}`).set({ name, joinedAt: firebase.database.ServerValue.TIMESTAMP });
+  db.ref('reassign/' + token).set(target);
+  db.ref(`teams/${teamId}/members/${token}`).remove();
+}
+function lockTeam(id, sec){
+  db.ref('teams/' + id + '/lockedUntil').set(serverNow() + sec * 1000);
+}
+function unlockTeam(id){
+  db.ref('teams/' + id + '/lockedUntil').set(null);
+}
+function renderTeamCtrl(){
   const ids = Object.keys(teams).sort();
-  $('teamAdminList').innerHTML = !ids.length ? '<div class="empty">등록된 팀이 없습니다.</div>' :
-    `<table><thead><tr><th>팀 코드</th><th>생성</th><th></th></tr></thead><tbody>` +
-    ids.map(id => `<tr><td class="mono">${esc(id)}</td><td class="mono">${teams[id].createdAt ? fmtClock(teams[id].createdAt) : '-'}</td>
-      <td style="text-align:right"><button class="btn danger small" onclick="delTeam('${esc(id)}')">삭제</button></td></tr>`).join('') +
-    '</tbody></table>';
+  if (!ids.length){ $('teamCtrlList').innerHTML = '<div class="empty card">등록된 팀이 없습니다.</div>'; return; }
+  $('teamCtrlList').innerHTML = ids.map(id => {
+    const t = teams[id];
+    const locked = t.lockedUntil && serverNow() < t.lockedUntil;
+    const members = Object.entries(t.members || {});
+    return `<div class="teamblock">
+      <div class="thead">
+        <span class="tid">${esc(id)}</span>
+        ${t.finishedAt ? '<span class="badge g">완료</span>' : ''}
+        ${locked ? `<span class="badge r">입력잠금 ${fmtDur(t.lockedUntil - serverNow())}</span>` : ''}
+        <span class="tbtns">
+          <button class="btn ghost tiny" onclick="lockTeam('${esc(id)}', 180)">+3분 잠금</button>
+          <button class="btn ghost tiny" onclick="unlockTeam('${esc(id)}')">잠금 해제</button>
+          <button class="btn danger tiny" onclick="delTeam('${esc(id)}')">팀 삭제</button>
+        </span>
+      </div>
+      <div>${!members.length ? '<span class="memo" style="font-size:12px; color:var(--dim)">합류한 팀원이 없습니다.</span>' :
+        members.map(([tok, m]) => `<span class="memberchip">${esc(m.name || '?')}
+          <button class="btn ghost tiny mb" onclick="moveMember('${esc(id)}','${esc(tok)}','${esc(m.name || '')}')">이동</button>
+          <button class="btn danger tiny mb" onclick="kickMember('${esc(id)}','${esc(tok)}','${esc(m.name || '')}')">강퇴</button>
+        </span>`).join('')}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ---------- 공지 ---------- */
+function sendNotice(){
+  const text = $('nText').value.trim();
+  if (!text && !images.notice) return;
+  db.ref('notices').push({
+    text, image: images.notice || null,
+    at: firebase.database.ServerValue.TIMESTAMP
+  }).then(() => {
+    $('nText').value = ''; clearImage('notice');
+    $('nMsg').textContent = '발송했습니다. 참가자 화면에 팝업으로 표시됩니다.';
+    setTimeout(() => $('nMsg').textContent = '', 3000);
+  });
+}
+function delNotice(id){
+  if (!confirm('이 공지를 삭제할까요?')) return;
+  db.ref('notices/' + id).remove();
+}
+function renderNoticeAdmin(){
+  const list = Object.entries(notices).map(([id, n]) => ({ id, ...n })).sort((a,b) => (b.at||0) - (a.at||0));
+  $('noticeAdminList').innerHTML = !list.length ? '<div class="empty">발송된 공지가 없습니다.</div>' :
+    list.map(n => `<div class="noticerow">
+      <div class="nt"><span>${n.at ? fmtClock(n.at) : ''}</span>
+        <button class="btn danger tiny" onclick="delNotice('${esc(n.id)}')">삭제</button></div>
+      <div class="nb">${esc(n.text || '')}</div>
+      ${n.image ? `<img src="${n.image}" alt="공지 이미지">` : ''}
+    </div>`).join('');
 }
 
 /* ---------- 힌트 관리 ---------- */
 let editingCode = null;
-const CODE_CHARS_A = 'ABCDEFGHJKMNPQRSTUVWXYZ';  /* I, L, O 제외 */
-const CODE_CHARS_N = '23456789';                  /* 0, 1 제외 */
+const CODE_CHARS_A = 'ABCDEFGHJKMNPQRSTUVWXYZ';
+const CODE_CHARS_N = '23456789';
 function genCode(){
   let code;
   do {
@@ -457,13 +655,13 @@ function saveHint(){
   const code = norm($('hCode').value);
   const content = $('hContent').value.trim();
   if (code.length !== 4) return hMsg('코드는 4자리여야 합니다.', true);
-  if (!content) return hMsg('힌트 내용을 입력하세요.', true);
+  if (!content && !images.hint) return hMsg('힌트 내용 또는 이미지를 입력하세요.', true);
   if (!editingCode && hints[code]) return hMsg('이미 사용 중인 코드입니다. 자동생성을 눌러보세요.', true);
   if (editingCode && editingCode !== code) return hMsg('수정 시 코드는 바꿀 수 없습니다. 삭제 후 새로 등록하세요.', true);
   const data = {
     title: $('hTitle').value.trim(),
     content,
-    imageUrl: $('hImage').value.trim(),
+    image: images.hint || null,
     memo: $('hMemo').value.trim(),
     viewSec: $('hViewSec').value ? Number($('hViewSec').value) : null,
     updatedAt: firebase.database.ServerValue.TIMESTAMP,
@@ -477,7 +675,8 @@ function saveHint(){
 function hMsg(t, err){ const m = $('hMsg'); m.textContent = t; m.className = 'msg' + (err ? ' err' : ''); if (!err) setTimeout(() => m.textContent = '', 3000); }
 function clearHintForm(){
   editingCode = null;
-  ['hCode','hTitle','hContent','hImage','hMemo','hViewSec'].forEach(id => $(id).value = '');
+  ['hCode','hTitle','hContent','hMemo','hViewSec'].forEach(id => $(id).value = '');
+  clearImage('hint');
   $('hCode').disabled = false;
   $('hintFormTitle').textContent = '새 힌트 등록';
   $('hSaveBtn').textContent = '힌트 저장';
@@ -489,9 +688,9 @@ function editHint(code){
   $('hCode').value = code; $('hCode').disabled = true;
   $('hTitle').value = h.title || '';
   $('hContent').value = h.content || '';
-  $('hImage').value = h.imageUrl || '';
   $('hMemo').value = h.memo || '';
   $('hViewSec').value = h.viewSec || '';
+  setImage('hint', h.image || null);
   $('hintFormTitle').textContent = `힌트 수정 — ${code}`;
   $('hSaveBtn').textContent = '수정 저장';
   $('hCancelBtn').style.display = '';
@@ -511,7 +710,7 @@ function renderHints(){
       const preview = (h.content || '').slice(0, 60) + ((h.content||'').length > 60 ? '…' : '');
       return `<tr>
         <td><span class="code">${esc(c)}</span></td>
-        <td>${h.title ? `<b>${esc(h.title)}</b><br>` : ''}${esc(preview)}${h.memo ? `<br><span class="memo">📍 ${esc(h.memo)}</span>` : ''}</td>
+        <td>${h.title ? `<b>${esc(h.title)}</b><br>` : ''}${esc(preview)}${h.image ? ' <span class="badge y">🖼</span>' : ''}${h.memo ? `<br><span class="memo">📍 ${esc(h.memo)}</span>` : ''}</td>
         <td class="mono">${h.viewSec || `기본(${config.defaultViewSec ?? 30})`}초</td>
         <td style="text-align:right; white-space:nowrap">
           <button class="btn ghost small" onclick="editHint('${esc(c)}')">수정</button>
@@ -532,7 +731,7 @@ function getHintUrl(){
     return null;
   }
   db.ref('config/hintUrl').set(url);
-  $('prMsg').textContent = ''; 
+  $('prMsg').textContent = '';
   return url;
 }
 function printCards(){
@@ -548,7 +747,7 @@ function printCards(){
     card.className = 'qr-card';
     card.innerHTML = `
       <div class="qhead">${esc(config.title || 'HINT CARD')}</div>
-      <div class="qr" id="qr_${c}"></div>
+      <div class="qr"></div>
       <div class="qcode">${esc(c)}</div>
       ${showTitle && hints[c].title ? `<div class="qtitle">${esc(hints[c].title)}</div>` : '<div class="qtitle"></div>'}
       <div class="qguide">QR을 스캔한 뒤, 위 4자리 코드를 입력하세요</div>`;
@@ -577,22 +776,27 @@ function doPrint(){
 
 /* ---------- 운영 현황 ---------- */
 function renderLive(){
-  if (!$('paneLive').classList.contains('on')) return;
+  if (!$('paneLive').classList.contains('on')){
+    if ($('paneTeams').classList.contains('on')) renderTeamCtrl();  /* 잠금 남은시간 갱신 */
+    return;
+  }
   const ids = Object.keys(teams);
   const rows = ids.map(id => {
     const t = teams[id];
     const v = views[id] ? Object.keys(views[id]).length : 0;
     const locked = t.lockedUntil && serverNow() < t.lockedUntil;
     return { id, v, wrong: t.wrongCount || 0, locked, lockedUntil: t.lockedUntil,
+             members: Object.keys(t.members || {}).length,
              fin: !!t.finishedAt, elapsed: t.elapsedMs };
   });
   rows.sort((a,b) => (a.fin === b.fin) ? (a.fin ? a.elapsed - b.elapsed : b.v - a.v) : (a.fin ? -1 : 1));
   let rank = 0;
   $('liveTeams').innerHTML = !rows.length ? '<div class="empty">등록된 팀이 없습니다.</div>' :
-    `<table><thead><tr><th>순위</th><th>팀</th><th>열람</th><th>오답</th><th>상태</th><th>기록</th></tr></thead><tbody>` +
+    `<table><thead><tr><th>순위</th><th>팀</th><th>인원</th><th>열람</th><th>오답</th><th>상태</th><th>기록</th></tr></thead><tbody>` +
     rows.map(r => `<tr>
       <td class="mono">${r.fin ? (++rank === 1 ? '🏆 1' : rank) : '-'}</td>
       <td class="mono">${esc(r.id)}</td>
+      <td class="mono">${r.members}</td>
       <td class="mono">${r.v}</td>
       <td class="mono">${r.wrong}</td>
       <td>${r.fin ? '<span class="badge g">완료</span>' : r.locked ? `<span class="badge r">잠금 ${fmtDur(r.lockedUntil - serverNow())}</span>` : '<span class="badge y">진행중</span>'}</td>
@@ -601,7 +805,6 @@ function renderLive(){
 }
 
 function renderFeeds(){
-  /* 열람 피드 */
   const vf = [];
   Object.entries(views).forEach(([tid, obj]) =>
     Object.entries(obj || {}).forEach(([code, v]) => vf.push({ tid, code, ...v })));
@@ -609,7 +812,6 @@ function renderFeeds(){
   $('viewFeed').innerHTML = !vf.length ? '<div class="empty">아직 열람 기록이 없습니다.</div>' :
     vf.slice(0, 30).map(v => `<div class="feedrow"><span class="t">${fmtClock(v.viewedAt)}</span><span class="c">${esc(v.code)}</span><span>${esc(v.tid)} · ${esc(v.viewer || '')}</span></div>`).join('');
 
-  /* 시도 피드 */
   const af = [];
   Object.entries(attempts).forEach(([tid, obj]) =>
     Object.values(obj || {}).forEach(a => af.push({ tid, ...a })));

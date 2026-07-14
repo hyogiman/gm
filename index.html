@@ -17,7 +17,8 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{
   background:var(--ink); color:var(--paper); font-family:var(--sans);
-  min-height:100dvh; display:flex; flex-direction:column; align-items:center; padding:20px 16px 60px;
+  min-height:100dvh; display:flex; flex-direction:column; align-items:center;
+  padding:20px 16px 96px;
   background-image:
     linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
@@ -26,19 +27,21 @@ body{
 .topline{
   width:100%; max-width:520px; display:flex; justify-content:space-between; align-items:center;
   font-family:var(--mono); font-size:11px; letter-spacing:.14em; color:var(--dim);
-  border-bottom:1px solid var(--line); padding-bottom:10px; margin-bottom:26px;
+  border-bottom:1px solid var(--line); padding-bottom:10px; margin-bottom:22px;
 }
 .topline .dot{color:var(--gold)}
 #teamChip{cursor:pointer}
 #teamChip:hover{color:var(--paper)}
 .wrap{width:100%; max-width:520px}
-.view{display:none; animation:fadein .35s ease}
+.view{display:none; animation:fadein .3s ease}
 .view.active{display:block}
-@keyframes fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.tabpane{display:none; animation:fadein .25s ease}
+.tabpane.on{display:block}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion: reduce){ *{animation:none !important; transition:none !important} }
 
 .kicker{font-family:var(--mono); font-size:11px; letter-spacing:.22em; color:var(--gold); margin-bottom:10px}
-h1{font-size:26px; font-weight:700; line-height:1.35; margin-bottom:8px; word-break:keep-all}
+h1{font-size:25px; font-weight:700; line-height:1.35; margin-bottom:8px; word-break:keep-all}
 h2{font-size:15px; font-weight:700; margin-bottom:12px}
 .sub{color:var(--dim); font-size:14px; line-height:1.75; word-break:keep-all; white-space:pre-wrap}
 
@@ -59,11 +62,19 @@ button:disabled{opacity:.4; cursor:not-allowed}
 .msg{margin-top:12px; font-size:13px; color:var(--red); min-height:18px; word-break:keep-all}
 
 .statusband{display:flex; gap:10px; margin-top:16px}
-.stat{flex:1; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 12px; text-align:center}
+.stat{flex:1; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 10px; text-align:center}
 .stat .lb{font-family:var(--mono); font-size:10px; letter-spacing:.14em; color:var(--dim); margin-bottom:6px}
 .stat .vl{font-family:var(--mono); font-size:19px; font-weight:700}
 .stat .vl.live{color:var(--gold)}
-.stat .vl.done{color:var(--green)}
+
+.introimg{width:100%; border-radius:12px; border:1px solid var(--line); margin-top:14px; display:block}
+
+/* 공지 */
+.notice-item{border-bottom:1px solid var(--line); padding:14px 0}
+.notice-item:last-child{border-bottom:none}
+.notice-item .nt{font-family:var(--mono); font-size:11px; color:var(--dim); letter-spacing:.1em; margin-bottom:6px}
+.notice-item .nb{font-size:14px; line-height:1.75; white-space:pre-wrap; word-break:keep-all}
+.notice-item img{width:100%; border-radius:10px; margin-top:10px; border:1px solid var(--line)}
 
 .code-input{
   font-family:var(--mono) !important; font-size:28px !important; font-weight:700;
@@ -73,11 +84,11 @@ button:disabled{opacity:.4; cursor:not-allowed}
   margin-top:14px; border:1px dashed var(--red); border-radius:10px; padding:14px; text-align:center;
   font-family:var(--mono); color:var(--red); font-size:14px; letter-spacing:.06em;
 }
-.logrow{display:flex; justify-content:space-between; align-items:center; padding:11px 0; border-bottom:1px solid var(--line); font-size:14px}
+.logrow{display:flex; justify-content:space-between; align-items:center; padding:11px 0; border-bottom:1px solid var(--line); font-size:14px; gap:10px}
 .logrow:last-child{border-bottom:none}
 .logrow .c{font-family:var(--mono); font-weight:700; letter-spacing:.15em; color:var(--gold)}
-.logrow .who{color:var(--dim); font-size:12px}
-.logrow .st{font-family:var(--mono); font-size:11px; letter-spacing:.1em}
+.logrow .who{color:var(--dim); font-size:12px; flex:1; text-align:right}
+.logrow .st{font-family:var(--mono); font-size:11px; letter-spacing:.1em; white-space:nowrap}
 .st.burn{color:var(--red)} .st.open{color:var(--gold)}
 .empty{color:var(--dim); font-size:13px; text-align:center; padding:14px 0}
 
@@ -98,7 +109,40 @@ td{padding:10px 6px; border-bottom:1px solid var(--line)}
 tr:last-child td{border-bottom:none}
 tr.me td{color:var(--gold); font-weight:700}
 td.mono{font-family:var(--mono)}
-.rank1 td:first-child{color:var(--gold)}
+
+/* 하단 탭 */
+.tabbar{
+  position:fixed; left:0; right:0; bottom:0; z-index:50;
+  background:rgba(15,18,22,.96); border-top:1px solid var(--line);
+  display:none; justify-content:center; backdrop-filter:blur(8px);
+}
+.tabbar.show{display:flex}
+.tabbar-inner{width:100%; max-width:520px; display:flex}
+.tabbtn{
+  flex:1; background:none; border:none; margin:0; padding:10px 0 12px; cursor:pointer;
+  color:var(--dim); font-family:var(--sans); font-size:11px; display:flex; flex-direction:column; align-items:center; gap:3px;
+  border-radius:0; font-weight:500;
+}
+.tabbtn .ic{font-size:19px; line-height:1}
+.tabbtn.on{color:var(--gold); font-weight:700}
+.tabbtn.on .ic{transform:translateY(-1px)}
+
+/* 팝업 모달 */
+.overlay{
+  position:fixed; inset:0; z-index:100; background:rgba(8,10,13,.8); backdrop-filter:blur(3px);
+  display:none; align-items:center; justify-content:center; padding:20px;
+}
+.overlay.show{display:flex}
+.modal{
+  width:100%; max-width:420px; background:var(--panel); border:1px solid var(--gold-soft);
+  border-radius:16px; padding:26px 22px; animation:pop .28s cubic-bezier(.2,1.6,.4,1);
+  max-height:80dvh; overflow-y:auto;
+}
+@keyframes pop{from{transform:scale(.88); opacity:0}to{transform:scale(1); opacity:1}}
+.modal .mk{font-family:var(--mono); font-size:11px; letter-spacing:.22em; color:var(--gold); margin-bottom:10px}
+.modal .mt{font-size:20px; font-weight:700; margin-bottom:10px; word-break:keep-all}
+.modal .mb{font-size:14px; color:var(--paper); line-height:1.8; white-space:pre-wrap; word-break:keep-all}
+.modal img{width:100%; border-radius:10px; margin-top:12px; border:1px solid var(--line)}
 </style>
 </head>
 <body>
@@ -127,55 +171,97 @@ td.mono{font-family:var(--mono)}
 
   <!-- 허브 -->
   <section id="hubView" class="view">
-    <div class="kicker">BRIEFING</div>
-    <h1 id="gameTitle">-</h1>
-    <p class="sub" id="gameIntro"></p>
 
-    <div class="statusband">
-      <div class="stat"><div class="lb">상태</div><div class="vl" id="stState">-</div></div>
-      <div class="stat"><div class="lb">경과 시간</div><div class="vl live" id="stElapsed">--:--</div></div>
-      <div class="stat"><div class="lb">열람 힌트</div><div class="vl" id="stViews">0</div></div>
+    <!-- 탭 1: 메인 -->
+    <div class="tabpane on" id="tabMain">
+      <div class="kicker">BRIEFING</div>
+      <h1 id="gameTitle">-</h1>
+      <p class="sub" id="gameIntro"></p>
+      <img class="introimg" id="gameIntroImg" style="display:none" alt="브리핑 이미지">
+
+      <div class="statusband">
+        <div class="stat"><div class="lb">상태</div><div class="vl" id="stState">-</div></div>
+        <div class="stat"><div class="lb">경과 시간</div><div class="vl live" id="stElapsed">--:--</div></div>
+        <div class="stat"><div class="lb">열람 힌트</div><div class="vl" id="stViews">0</div></div>
+      </div>
+
+      <div class="card">
+        <h2>📢 운영자 공지</h2>
+        <div id="noticeBoard"><div class="empty">아직 공지가 없습니다.</div></div>
+      </div>
     </div>
 
-    <!-- 완료 카드 (성공 시 노출) -->
-    <div class="card finish" id="finishCard" style="display:none">
-      <div class="stamp">MISSION CLEAR</div>
-      <div class="big" id="fnTime">--:--</div>
-      <div class="rk" id="fnRank"></div>
-      <div class="sm" id="fnMsg"></div>
+    <!-- 탭 2: 힌트 -->
+    <div class="tabpane" id="tabHints">
+      <div class="kicker">FIELD LOG</div>
+      <h1>우리 팀 열람 기록</h1>
+      <p class="sub">누가, 언제, 어떤 힌트를 열었는지 팀 전체에 공유됩니다.</p>
+      <div class="card">
+        <div id="viewLog"><div class="empty">아직 열람한 힌트가 없습니다.</div></div>
+        <button class="ghost" onclick="location.href='hint.html'">힌트 코드 직접 입력하기</button>
+      </div>
     </div>
 
-    <!-- 최종 코드 -->
-    <div class="card" id="finalCard">
-      <h2>🔑 최종 코드 입력</h2>
+    <!-- 탭 3: 최종 코드 -->
+    <div class="tabpane" id="tabCode">
+      <div class="kicker">FINAL ACCESS</div>
+      <h1>최종 코드 입력</h1>
       <p class="sub">모든 단서가 가리키는 하나의 코드를 찾아 입력하세요. 오답 시 팀 전체가 일정 시간 입력이 잠깁니다.</p>
-      <input type="text" id="finalInput" class="code-input" placeholder="FINAL CODE" autocomplete="off">
-      <div class="cooldown" id="cooldownBox" style="display:none"></div>
-      <button onclick="submitFinal()" id="finalBtn">코드 확인</button>
-      <div class="msg" id="finalMsg"></div>
+
+      <div class="card finish" id="finishCard" style="display:none">
+        <div class="stamp">MISSION CLEAR</div>
+        <div class="big" id="fnTime">--:--</div>
+        <div class="rk" id="fnRank"></div>
+        <div class="sm" id="fnMsg"></div>
+      </div>
+
+      <div class="card" id="finalCard">
+        <input type="text" id="finalInput" class="code-input" placeholder="FINAL CODE" autocomplete="off">
+        <div class="cooldown" id="cooldownBox" style="display:none"></div>
+        <button onclick="submitFinal()" id="finalBtn">코드 확인</button>
+        <div class="msg" id="finalMsg"></div>
+      </div>
     </div>
 
-    <!-- 힌트 열람 기록 -->
-    <div class="card">
-      <h2>📂 우리 팀 열람 기록</h2>
-      <div id="viewLog"><div class="empty">아직 열람한 힌트가 없습니다.</div></div>
-      <button class="ghost" onclick="location.href='hint.html'">힌트 코드 직접 입력하기</button>
+    <!-- 탭 4: 현황 -->
+    <div class="tabpane" id="tabRank">
+      <div class="kicker">SCOREBOARD</div>
+      <h1>팀 현황</h1>
+      <p class="sub">최종 코드를 먼저 입력한 팀이 상위에 오릅니다.</p>
+      <div class="card">
+        <div id="rankBoard"><div class="empty">-</div></div>
+      </div>
     </div>
 
-    <!-- 순위 -->
-    <div class="card">
-      <h2>🏁 팀 현황</h2>
-      <div id="rankBoard"><div class="empty">-</div></div>
-    </div>
   </section>
+</div>
 
+<!-- 하단 탭바 -->
+<nav class="tabbar" id="tabbar">
+  <div class="tabbar-inner">
+    <button class="tabbtn on" data-pane="tabMain" onclick="tabTo(this)"><span class="ic">🏠</span>메인</button>
+    <button class="tabbtn" data-pane="tabHints" onclick="tabTo(this)"><span class="ic">📂</span>힌트</button>
+    <button class="tabbtn" data-pane="tabCode" onclick="tabTo(this)"><span class="ic">🔑</span>코드</button>
+    <button class="tabbtn" data-pane="tabRank" onclick="tabTo(this)"><span class="ic">🏁</span>현황</button>
+  </div>
+</nav>
+
+<!-- 팝업 -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="mk" id="mdKicker">NOTICE</div>
+    <div class="mt" id="mdTitle"></div>
+    <div class="mb" id="mdBody"></div>
+    <img id="mdImg" style="display:none" alt="">
+    <button onclick="closeModal()">확인</button>
+  </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 <script>
 /* ================================================================
-   ★ Firebase 설정 — 세 파일(index/hint/admin) 모두 동일하게 교체
+   ★ Firebase 설정 — 세 파일(index/hint/admin) 공통
 ================================================================ */
 const firebaseConfig = {
   apiKey: "AIzaSyCCxRR6hXvk9Z17eK8H_Vov_TbGX8LzvDs",
@@ -195,41 +281,114 @@ db.ref('.info/serverTimeOffset').on('value', s => { timeOffset = s.val() || 0; }
 const serverNow = () => Date.now() + timeOffset;
 const norm = s => (s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const fmtDur = ms => {
-  if (ms == null || ms < 0) return '--:--';
-  const t = Math.floor(ms / 1000);
-  const m = Math.floor(t / 60), s = t % 60;
-  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-};
+const fmtDur = ms => { if (ms == null || ms < 0) return '--:--'; const t = Math.floor(ms/1000); return `${String(Math.floor(t/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`; };
 const fmtClock = ms => { const d = new Date(ms); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
 
 /* ---------- 세션 ---------- */
 let team = localStorage.getItem('hh_team') || '';
 let myName = localStorage.getItem('hh_name') || '';
+let myToken = localStorage.getItem('hh_token');
+if (!myToken){ myToken = Math.random().toString(36).slice(2,10); localStorage.setItem('hh_token', myToken); }
 
-function show(id){ document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); $(id).classList.add('active'); }
+function show(id){ document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); $(id).classList.add('active'); $('tabbar').classList.toggle('show', id === 'hubView'); }
+function tabTo(btn){
+  document.querySelectorAll('.tabbtn').forEach(b => b.classList.remove('on'));
+  document.querySelectorAll('.tabpane').forEach(p => p.classList.remove('on'));
+  btn.classList.add('on'); $(btn.dataset.pane).classList.add('on');
+  renderAll();
+}
 function renderChip(){ $('teamChip').textContent = team ? `${team} · ${myName}` : '팀 미확인'; }
 $('teamChip').onclick = () => {
   if (!team) return;
   if (!confirm('팀을 변경할까요?')) return;
-  detachTeamListeners();
-  team = ''; localStorage.removeItem('hh_team'); renderChip(); show('joinView');
+  leaveTeam();
 };
+function leaveTeam(msgText){
+  detachTeamListeners();
+  if (team) db.ref(`teams/${team}/members/${myToken}`).remove();
+  team = ''; localStorage.removeItem('hh_team');
+  renderChip(); show('joinView');
+  if (msgText) openModal('SYSTEM', '알림', msgText);
+}
+
+/* ---------- 팝업 모달 ---------- */
+let modalQueue = [];
+function openModal(kicker, title, body, imgSrc){
+  modalQueue.push({kicker, title, body, imgSrc});
+  if (!$('overlay').classList.contains('show')) nextModal();
+}
+function nextModal(){
+  const m = modalQueue.shift();
+  if (!m){ $('overlay').classList.remove('show'); return; }
+  $('mdKicker').textContent = m.kicker;
+  $('mdTitle').textContent = m.title;
+  $('mdBody').textContent = m.body || '';
+  if (m.imgSrc){ $('mdImg').src = m.imgSrc; $('mdImg').style.display = ''; }
+  else $('mdImg').style.display = 'none';
+  $('overlay').classList.add('show');
+}
+function closeModal(){ nextModal(); }
 
 /* ---------- 전역 상태 ---------- */
-let config = {}, game = {}, teams = {}, myViews = {}, myTeam = null;
+let config = {}, game = {}, teams = {}, myViews = {}, notices = {}, myTeam = null;
 let uiTimer = null;
+let prevStarted = null, prevEnded = null;   /* 게임 시작/종료 팝업 감지 */
+let bootDone = false;
 
-db.ref('config').on('value', s => { config = s.val() || {}; renderStatic(); });
-db.ref('game').on('value', s => { game = s.val() || {}; renderAll(); });
+db.ref('config').on('value', s => { config = s.val() || {}; renderStatic(); renderAll(); });
+db.ref('game').on('value', s => {
+  game = s.val() || {};
+  const started = !!game.startedAt, ended = !!game.endedAt;
+  if (bootDone && team){
+    if (prevStarted === false && started && !ended)
+      openModal('MISSION START', '🚨 게임이 시작되었습니다!', '지금부터 현장의 QR 힌트를 열람할 수 있습니다. 팀과 함께 움직이세요.');
+    if (prevEnded === false && ended)
+      openModal('MISSION CLOSED', '게임이 종료되었습니다', '힌트 열람과 코드 입력이 마감되었습니다. 수고하셨습니다!');
+  }
+  prevStarted = started; prevEnded = ended;
+  renderAll();
+});
 db.ref('teams').on('value', s => { teams = s.val() || {}; myTeam = team ? teams[team] : null; renderAll(); });
+db.ref('notices').on('value', s => { notices = s.val() || {}; renderNotices(); maybePopupNotice(); });
 
-let viewsRef = null, teamRef = null;
+let viewsRef = null, memberRef = null, reassignRef = null;
 function attachTeamListeners(){
-  viewsRef = db.ref('views/' + team);
+  const t = team;
+  viewsRef = db.ref('views/' + t);
   viewsRef.on('value', s => { myViews = s.val() || {}; renderAll(); });
+  memberRef = db.ref(`teams/${t}/members/${myToken}`);
+  let first = true;
+  memberRef.on('value', s => {
+    if (first){ first = false; return; }
+    if (t !== team) return;
+    if (!s.exists()){
+      /* 팀 이동이면 reassign 리스너가 먼저 처리함 — 잠시 대기 후 확인 */
+      setTimeout(async () => {
+        if (t !== team) return;
+        const r = await db.ref('reassign/' + myToken).get();
+        if (!r.exists()) leaveTeam('운영자에 의해 팀에서 제외되었습니다.\n운영자의 안내에 따라 다시 합류하세요.');
+      }, 1500);
+    }
+  });
 }
-function detachTeamListeners(){ if (viewsRef) viewsRef.off(); myViews = {}; }
+function detachTeamListeners(){
+  if (viewsRef) viewsRef.off();
+  if (memberRef) memberRef.off();
+  viewsRef = memberRef = null; myViews = {};
+}
+
+/* 팀 이동 지시 수신 */
+db.ref('reassign/' + myToken).on('value', s => {
+  const target = s.val();
+  if (!target) return;
+  db.ref('reassign/' + myToken).remove();
+  if (target === '__KICK__'){ leaveTeam('운영자에 의해 팀에서 제외되었습니다.'); return; }
+  detachTeamListeners();
+  team = norm(target); localStorage.setItem('hh_team', team);
+  db.ref(`teams/${team}/members/${myToken}`).set({ name: myName, joinedAt: firebase.database.ServerValue.TIMESTAMP });
+  renderChip(); attachTeamListeners(); show('hubView'); renderAll();
+  openModal('SYSTEM', '팀이 변경되었습니다', `운영자가 회원님을 ${team} 팀으로 이동시켰습니다.`);
+});
 
 /* ---------- 합류 ---------- */
 async function join(){
@@ -245,7 +404,33 @@ async function join(){
   }
   team = t; myName = n;
   localStorage.setItem('hh_team', t); localStorage.setItem('hh_name', n);
-  renderChip(); attachTeamListeners(); show('hubView'); renderAll();
+  await db.ref(`teams/${t}/members/${myToken}`).set({ name: n, joinedAt: firebase.database.ServerValue.TIMESTAMP });
+  renderChip(); attachTeamListeners(); show('hubView'); renderAll(); maybePopupNotice();
+}
+
+/* ---------- 공지 ---------- */
+function noticeList(){
+  return Object.entries(notices).map(([id, n]) => ({ id, ...n })).sort((a,b) => (b.at||0) - (a.at||0));
+}
+function renderNotices(){
+  const list = noticeList();
+  $('noticeBoard').innerHTML = !list.length ? '<div class="empty">아직 공지가 없습니다.</div>' :
+    list.map(n => `<div class="notice-item">
+      <div class="nt">${n.at ? fmtClock(n.at) : ''}</div>
+      <div class="nb">${esc(n.text || '')}</div>
+      ${n.image ? `<img src="${n.image}" alt="공지 이미지">` : ''}
+    </div>`).join('');
+}
+function maybePopupNotice(){
+  if (!team || !$('hubView').classList.contains('active')) return;
+  const list = noticeList();
+  if (!list.length) return;
+  const latest = list[0];
+  const seenAt = Number(localStorage.getItem('hh_notice_seen') || 0);
+  if ((latest.at || 0) > seenAt){
+    localStorage.setItem('hh_notice_seen', String(latest.at || serverNow()));
+    openModal('NOTICE', '📢 운영자 공지', latest.text || '', latest.image || null);
+  }
 }
 
 /* ---------- 렌더 ---------- */
@@ -253,23 +438,20 @@ function renderStatic(){
   $('gameTitle').textContent = config.title || '작전명 미정';
   $('gameIntro').textContent = config.intro || '운영자가 브리핑을 준비하고 있습니다.';
   $('joinTitle').textContent = config.title ? `「${config.title}」에 합류합니다` : '작전에 합류합니다';
+  if (config.introImage){ $('gameIntroImg').src = config.introImage; $('gameIntroImg').style.display = ''; }
+  else $('gameIntroImg').style.display = 'none';
 }
 
 function renderAll(){
   if (!team || !$('hubView').classList.contains('active')) return;
 
-  /* 상태 배지 */
   const started = !!game.startedAt, ended = !!game.endedAt;
   $('stState').textContent = ended ? '종료' : started ? '진행중' : '대기';
   $('stState').className = 'vl' + (started && !ended ? ' live' : '');
-
-  /* 열람 수 */
   $('stViews').textContent = Object.keys(myViews).length;
 
-  /* 열람 로그 */
   renderViewLog();
 
-  /* 완료/최종코드 카드 */
   const fin = myTeam && myTeam.finishedAt;
   $('finishCard').style.display = fin ? '' : 'none';
   $('finalCard').style.display = fin ? 'none' : '';
@@ -279,10 +461,8 @@ function renderAll(){
     $('fnMsg').textContent = config.successMessage || '모든 단서를 연결해 냈습니다. 팀의 승리를 축하합니다!';
   }
 
-  /* 순위판 */
-  renderRank();
+  if ($('tabRank').classList.contains('on')) renderRank();
 
-  /* 1초 UI 타이머(경과·쿨다운·열람상태) */
   clearInterval(uiTimer);
   const tick = () => {
     $('stElapsed').textContent = fin
@@ -296,10 +476,7 @@ function renderAll(){
 
 function renderViewLog(){
   const entries = Object.entries(myViews).sort((a,b) => a[1].viewedAt - b[1].viewedAt);
-  if (!entries.length){
-    $('viewLog').innerHTML = '<div class="empty">아직 열람한 힌트가 없습니다.</div>';
-    return;
-  }
+  if (!entries.length){ $('viewLog').innerHTML = '<div class="empty">아직 열람한 힌트가 없습니다.</div>'; return; }
   $('viewLog').innerHTML = entries.map(([code, v]) => {
     const burned = serverNow() >= v.expireAt;
     return `<div class="logrow">
@@ -311,26 +488,25 @@ function renderViewLog(){
 }
 
 function renderCooldown(){
+  const globalLock = config.finalLocked === true;
   const until = myTeam && myTeam.lockedUntil;
-  const locked = until && serverNow() < until;
+  const teamLock = until && serverNow() < until;
+  const locked = globalLock || teamLock;
   $('cooldownBox').style.display = locked ? '' : 'none';
   $('finalBtn').disabled = !!locked;
   $('finalInput').disabled = !!locked;
-  if (locked) $('cooldownBox').textContent = `오답 잠금 — ${fmtDur(until - serverNow())} 후 다시 시도할 수 있습니다`;
+  if (globalLock) $('cooldownBox').textContent = '운영자가 코드 입력을 잠갔습니다';
+  else if (teamLock) $('cooldownBox').textContent = `오답 잠금 — ${fmtDur(until - serverNow())} 후 다시 시도할 수 있습니다`;
 }
 
 function myRankText(){
-  const done = Object.entries(teams).filter(([,t]) => t.finishedAt)
-    .sort((a,b) => a[1].elapsedMs - b[1].elapsedMs);
+  const done = Object.entries(teams).filter(([,t]) => t.finishedAt).sort((a,b) => a[1].elapsedMs - b[1].elapsedMs);
   const idx = done.findIndex(([id]) => id === team);
   return idx >= 0 ? `전체 ${done.length}팀 완료 · 우리 팀 ${idx + 1}위` : '';
 }
 
 function renderRank(){
-  const list = Object.entries(teams).map(([id, t]) => ({
-    id, fin: !!t.finishedAt, elapsed: t.elapsedMs ?? Infinity,
-    views: 0, wrong: t.wrongCount || 0
-  }));
+  const list = Object.entries(teams).map(([id, t]) => ({ id, fin: !!t.finishedAt, elapsed: t.elapsedMs ?? Infinity, views: 0 }));
   db.ref('views').get().then(s => {
     const all = s.val() || {};
     list.forEach(t => t.views = all[t.id] ? Object.keys(all[t.id]).length : 0);
@@ -340,7 +516,7 @@ function renderRank(){
       `<table><thead><tr><th>순위</th><th>팀</th><th>기록</th><th>힌트</th></tr></thead><tbody>` +
       list.map(t => {
         const r = t.fin ? ++rank : '-';
-        return `<tr class="${t.id === team ? 'me' : ''} ${r === 1 ? 'rank1' : ''}">
+        return `<tr class="${t.id === team ? 'me' : ''}">
           <td class="mono">${r === 1 ? '🏆 1' : r}</td>
           <td>${esc(t.id)}</td>
           <td class="mono">${t.fin ? fmtDur(t.elapsed) : '진행중'}</td>
@@ -353,10 +529,10 @@ function renderRank(){
 async function submitFinal(){
   if (!game.startedAt) return $('finalMsg').textContent = '아직 게임이 시작되지 않았습니다.';
   if (game.endedAt) return $('finalMsg').textContent = '게임이 종료되었습니다.';
+  if (config.finalLocked === true) return renderCooldown();
   const input = norm($('finalInput').value);
   if (!input) return $('finalMsg').textContent = '코드를 입력하세요.';
 
-  /* 최신 잠금 상태 재확인 (다른 팀원이 방금 오답을 냈을 수 있음) */
   const tSnap = await db.ref('teams/' + team).get();
   const t = tSnap.val() || {};
   if (t.finishedAt) return;
@@ -392,8 +568,16 @@ $('joinName').addEventListener('keydown', e => { if (e.key === 'Enter') join(); 
 /* ---------- 초기 진입 ---------- */
 window.addEventListener('load', async () => {
   renderChip();
-  await db.ref('config').get().then(s => { config = s.val() || {}; renderStatic(); });
-  if (team){ attachTeamListeners(); show('hubView'); renderAll(); }
+  await Promise.all([
+    db.ref('config').get().then(s => { config = s.val() || {}; renderStatic(); }),
+    db.ref('game').get().then(s => { game = s.val() || {}; prevStarted = !!game.startedAt; prevEnded = !!game.endedAt; })
+  ]);
+  bootDone = true;
+  if (team){
+    /* 세션 복원 시 멤버 등록 유지 */
+    db.ref(`teams/${team}/members/${myToken}`).update({ name: myName });
+    attachTeamListeners(); show('hubView'); renderAll(); maybePopupNotice();
+  }
   else show('joinView');
 });
 </script>

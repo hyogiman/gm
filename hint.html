@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>HINT TERMINAL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0F1216; --panel:#171C23; --panel2:#1D242E; --line:#2A3341;
+  --paper:#EDE7DA; --dim:#93A0B4; --gold:#E3A63C; --gold-soft:#C9963A;
+  --red:#FF4A3B; --steel:#7E93AC;
+  --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans KR',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  background:var(--ink); color:var(--paper); font-family:var(--sans);
+  display:flex; flex-direction:column; align-items:center;
+  min-height:100dvh; padding:20px 16px 40px;
+  background-image:
+    linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
+  background-size:28px 28px;
+}
+.topline{
+  width:100%; max-width:460px; display:flex; justify-content:space-between; align-items:center;
+  font-family:var(--mono); font-size:11px; letter-spacing:.14em; color:var(--dim);
+  border-bottom:1px solid var(--line); padding-bottom:10px; margin-bottom:26px;
+}
+.topline .dot{color:var(--gold)}
+#teamChip{cursor:pointer}
+#teamChip:hover{color:var(--paper)}
+.wrap{width:100%; max-width:460px; flex:1; display:flex; flex-direction:column; justify-content:center}
+.view{display:none; animation:fadein .35s ease}
+.view.active{display:block}
+@keyframes fadein{from{opacity:0; transform:translateY(8px)}to{opacity:1; transform:none}}
+@media (prefers-reduced-motion: reduce){ *{animation:none !important; transition:none !important} }
+
+.kicker{font-family:var(--mono); font-size:11px; letter-spacing:.22em; color:var(--gold); margin-bottom:10px}
+h1{font-size:26px; font-weight:700; line-height:1.35; margin-bottom:8px; word-break:keep-all}
+.sub{color:var(--dim); font-size:14px; line-height:1.7; word-break:keep-all}
+
+.card{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:24px 20px; margin-top:20px}
+label{display:block; font-family:var(--mono); font-size:11px; letter-spacing:.14em; color:var(--dim); margin:14px 0 6px}
+input[type=text]{
+  width:100%; background:var(--panel2); border:1px solid var(--line); border-radius:10px;
+  color:var(--paper); font-family:var(--sans); font-size:16px; padding:13px 14px; outline:none;
+}
+input[type=text]:focus{border-color:var(--gold-soft)}
+button{
+  width:100%; margin-top:18px; padding:15px; border:none; border-radius:10px; cursor:pointer;
+  background:var(--gold); color:#1A1408; font-family:var(--sans); font-size:16px; font-weight:700;
+}
+button:active{transform:translateY(1px)}
+button.ghost{background:transparent; border:1px solid var(--line); color:var(--dim); font-weight:500; font-size:14px; padding:12px}
+button:disabled{opacity:.4; cursor:not-allowed}
+.msg{margin-top:12px; font-size:13px; color:var(--red); min-height:18px; word-break:keep-all}
+
+/* code input */
+.code-input{
+  font-family:var(--mono) !important; font-size:34px !important; font-weight:700;
+  letter-spacing:.5em; text-align:center; text-transform:uppercase; padding:18px 0 18px .5em !important;
+}
+.hintmeta{display:flex; justify-content:space-between; font-family:var(--mono); font-size:11px; letter-spacing:.14em; color:var(--dim); margin-bottom:14px}
+
+/* reveal */
+.reveal{background:var(--panel); border:1px solid var(--gold-soft); border-radius:14px; overflow:hidden; margin-top:20px}
+.fusewrap{height:6px; background:var(--panel2); position:relative}
+.fuse{height:100%; background:linear-gradient(90deg,var(--gold),var(--red)); width:100%; transition:width .95s linear; position:relative}
+.fuse::after{content:''; position:absolute; right:-3px; top:-3px; width:6px; height:12px; border-radius:3px; background:var(--red); box-shadow:0 0 10px 3px rgba(255,74,59,.55)}
+.reveal-head{display:flex; justify-content:space-between; align-items:center; padding:16px 20px 0}
+.reveal-code{font-family:var(--mono); font-size:13px; letter-spacing:.2em; color:var(--gold)}
+.countdown{font-family:var(--mono); font-size:26px; font-weight:700; color:var(--paper)}
+.countdown.danger{color:var(--red)}
+.reveal-body{padding:16px 20px 22px}
+.reveal-title{font-size:19px; font-weight:700; margin-bottom:10px; word-break:keep-all}
+.reveal-text{font-size:16px; line-height:1.85; white-space:pre-wrap; word-break:keep-all}
+.reveal-img{width:100%; border-radius:10px; margin-top:14px; border:1px solid var(--line)}
+.reveal-foot{border-top:1px dashed var(--line); padding:12px 20px; font-family:var(--mono); font-size:11px; letter-spacing:.12em; color:var(--dim)}
+
+/* destroyed */
+.stampbox{text-align:center; padding:46px 20px}
+.stamp{
+  display:inline-block; font-family:var(--mono); font-size:24px; font-weight:700; letter-spacing:.3em;
+  color:var(--red); border:3px solid var(--red); border-radius:8px; padding:12px 22px 12px calc(22px + .3em);
+  transform:rotate(-7deg); opacity:.92; animation:stampin .3s cubic-bezier(.2,2.2,.4,1) both;
+}
+@keyframes stampin{from{transform:rotate(-7deg) scale(2.2); opacity:0}to{transform:rotate(-7deg) scale(1); opacity:.92}}
+.stampinfo{margin-top:22px; color:var(--dim); font-size:14px; line-height:1.8; word-break:keep-all}
+.stampinfo b{color:var(--paper)}
+
+.notice{margin-top:20px; background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--steel); border-radius:10px; padding:16px 18px; font-size:14px; color:var(--dim); line-height:1.7; word-break:keep-all}
+.notice b{color:var(--paper)}
+</style>
+</head>
+<body>
+
+<div class="topline">
+  <span><span class="dot">●</span> HINT TERMINAL</span>
+  <span id="teamChip" title="팀 변경">-</span>
+</div>
+
+<div class="wrap">
+
+  <!-- 1. 팀 확인 -->
+  <section id="joinView" class="view">
+    <div class="kicker">IDENTIFY</div>
+    <h1>소속 팀을 확인합니다</h1>
+    <p class="sub">힌트는 팀 단위로 기록됩니다. 운영자에게 안내받은 팀 코드를 입력하세요.</p>
+    <div class="card">
+      <label>팀 코드</label>
+      <input type="text" id="joinTeam" placeholder="예: TEAM1" autocomplete="off">
+      <label>내 이름</label>
+      <input type="text" id="joinName" placeholder="힌트 열람 기록에 남습니다" autocomplete="off">
+      <button onclick="join()">확인</button>
+      <div class="msg" id="joinMsg"></div>
+    </div>
+  </section>
+
+  <!-- 2. 코드 입력 -->
+  <section id="codeView" class="view">
+    <div class="kicker">ACCESS CODE</div>
+    <h1>힌트 코드를 입력하세요</h1>
+    <p class="sub">인쇄물의 QR 아래에 적힌 4자리 코드를 입력합니다.</p>
+    <div class="card">
+      <input type="text" id="codeInput" class="code-input" maxlength="4" placeholder="····" autocomplete="off" inputmode="text">
+      <button onclick="submitCode()" id="openBtn">힌트 열람</button>
+      <div class="msg" id="codeMsg"></div>
+    </div>
+    <div class="notice">힌트는 <b>팀에서 단 한 명, 단 한 번</b>만 열 수 있습니다. 열람 즉시 파기 카운트다운이 시작되니, 팀원과 함께일 때 여세요.</div>
+  </section>
+
+  <!-- 3. 열람 -->
+  <section id="revealView" class="view">
+    <div class="kicker">MESSAGE INCOMING</div>
+    <div class="reveal">
+      <div class="fusewrap"><div class="fuse" id="fuse"></div></div>
+      <div class="reveal-head">
+        <span class="reveal-code" id="rvCode">----</span>
+        <span class="countdown" id="rvTimer">--</span>
+      </div>
+      <div class="reveal-body">
+        <div class="reveal-title" id="rvTitle"></div>
+        <div class="reveal-text" id="rvText"></div>
+        <img class="reveal-img" id="rvImg" style="display:none" alt="">
+      </div>
+      <div class="reveal-foot">이 메시지는 시간 종료 후 자동 파기되며 다시 열 수 없습니다</div>
+    </div>
+  </section>
+
+  <!-- 4. 파기/차단 -->
+  <section id="lockView" class="view">
+    <div class="kicker" id="lockKicker">DESTROYED</div>
+    <div class="card stampbox">
+      <div class="stamp" id="lockStamp">파기 완료</div>
+      <div class="stampinfo" id="lockInfo"></div>
+    </div>
+    <button class="ghost" onclick="showCode()">다른 코드 입력하기</button>
+  </section>
+
+  <!-- 5. 게임 상태 안내 -->
+  <section id="stateView" class="view">
+    <div class="kicker" id="stateKicker">STANDBY</div>
+    <h1 id="stateTitle"></h1>
+    <p class="sub" id="stateSub"></p>
+    <button class="ghost" onclick="location.reload()">새로고침</button>
+  </section>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script>
+/* ================================================================
+   ★ Firebase 설정 — 세 파일(index/hint/admin) 모두 동일하게 교체
+================================================================ */
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+  projectId: "YOUR_PROJECT",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "0",
+  appId: "YOUR_APP_ID"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+/* ---------- 공통 유틸 ---------- */
+const $ = id => document.getElementById(id);
+let timeOffset = 0;
+db.ref('.info/serverTimeOffset').on('value', s => { timeOffset = s.val() || 0; });
+const serverNow = () => Date.now() + timeOffset;
+const norm = s => (s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtClock = ms => {
+  const d = new Date(ms);
+  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+};
+
+/* ---------- 세션 ---------- */
+let team = localStorage.getItem('hh_team') || '';
+let myName = localStorage.getItem('hh_name') || '';
+let myToken = localStorage.getItem('hh_token');
+if (!myToken) { myToken = Math.random().toString(36).slice(2, 10); localStorage.setItem('hh_token', myToken); }
+
+/* ---------- 뷰 전환 ---------- */
+function show(id){
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  $(id).classList.add('active');
+}
+function renderChip(){ $('teamChip').textContent = team ? `${team} · ${myName}` : '팀 미확인'; }
+$('teamChip').onclick = () => {
+  if (team && !confirm('팀을 변경할까요? (열람 기록은 팀에 그대로 남습니다)')) return;
+  team = ''; localStorage.removeItem('hh_team'); renderChip(); show('joinView');
+};
+
+/* ---------- 게임 상태 ---------- */
+let game = null, config = null;
+db.ref('game').on('value', s => { game = s.val() || {}; });
+db.ref('config').on('value', s => { config = s.val() || {}; });
+
+function gameGate(){
+  if (!game || !game.startedAt){
+    $('stateKicker').textContent = 'STANDBY';
+    $('stateTitle').textContent = '아직 시작 전입니다';
+    $('stateSub').textContent = '운영자가 게임을 시작하면 힌트를 열람할 수 있습니다. 잠시 후 새로고침해 주세요.';
+    show('stateView'); return false;
+  }
+  if (game.endedAt){
+    $('stateKicker').textContent = 'CLOSED';
+    $('stateTitle').textContent = '게임이 종료되었습니다';
+    $('stateSub').textContent = '힌트 터미널이 닫혔습니다. 수고하셨습니다!';
+    show('stateView'); return false;
+  }
+  return true;
+}
+
+/* ---------- 팀 확인 ---------- */
+async function join(){
+  const t = norm($('joinTeam').value);
+  const n = $('joinName').value.trim();
+  if (!t) return $('joinMsg').textContent = '팀 코드를 입력하세요.';
+  if (!n) return $('joinMsg').textContent = '이름을 입력하세요.';
+  $('joinMsg').textContent = '확인 중...';
+  const snap = await db.ref('teams/' + t).get();
+  if (!snap.exists()){
+    const allow = (config && config.allowSelfJoin !== false);
+    if (!allow) return $('joinMsg').textContent = '등록되지 않은 팀입니다. 운영자에게 확인하세요.';
+    await db.ref('teams/' + t).set({ name: t, createdAt: firebase.database.ServerValue.TIMESTAMP, wrongCount: 0 });
+  }
+  team = t; myName = n;
+  localStorage.setItem('hh_team', t); localStorage.setItem('hh_name', n);
+  renderChip();
+  if (gameGate()) showCode();
+}
+
+function showCode(){
+  clearInterval(revealTimer);
+  $('codeInput').value = ''; $('codeMsg').textContent = '';
+  if (gameGate()){ show('codeView'); }
+}
+
+/* ---------- 힌트 열람 ---------- */
+let revealTimer = null;
+
+async function submitCode(){
+  if (!gameGate()) return;
+  const code = norm($('codeInput').value);
+  if (code.length !== 4) return $('codeMsg').textContent = '4자리 코드를 입력하세요.';
+  $('openBtn').disabled = true; $('codeMsg').textContent = '';
+
+  try {
+    const hintSnap = await db.ref('hints/' + code).get();
+    if (!hintSnap.exists()){
+      $('codeMsg').textContent = '존재하지 않는 코드입니다. 다시 확인하세요.';
+      $('openBtn').disabled = false; return;
+    }
+    const hint = hintSnap.val();
+    const viewSec = Number(hint.viewSec) || Number(config?.defaultViewSec) || 30;
+    const ref = db.ref(`views/${team}/${code}`);
+
+    const result = await ref.transaction(cur => {
+      if (cur) return;               // 이미 열람됨 → 트랜잭션 중단
+      const now = serverNow();
+      return { viewedAt: now, expireAt: now + viewSec * 1000, viewer: myName, token: myToken };
+    });
+
+    $('openBtn').disabled = false;
+    const rec = result.snapshot.val();
+
+    if (result.committed){
+      startReveal(code, hint, rec);                       // 최초 열람자
+    } else if (rec && rec.token === myToken && serverNow() < rec.expireAt){
+      startReveal(code, hint, rec);                       // 본인이 새로고침한 경우
+    } else if (rec && serverNow() < rec.expireAt){
+      showLocked('VIEWING', '열람 중', `이 힌트는 지금 <b>${esc(rec.viewer)}</b>님이 열람하고 있습니다.<br>힌트는 팀에서 한 명만 볼 수 있습니다. 직접 공유받으세요.`);
+    } else {
+      showLocked('DESTROYED', '파기 완료', `<b>${esc(rec.viewer)}</b>님이 ${fmtClock(rec.viewedAt)}에 이미 열람한 힌트입니다.<br>파기된 힌트는 다시 열 수 없습니다.`);
+    }
+  } catch(e){
+    $('openBtn').disabled = false;
+    $('codeMsg').textContent = '연결에 실패했습니다. 네트워크를 확인하세요.';
+  }
+}
+
+function startReveal(code, hint, rec){
+  $('rvCode').textContent = code;
+  $('rvTitle').textContent = hint.title || '';
+  $('rvTitle').style.display = hint.title ? '' : 'none';
+  $('rvText').textContent = hint.content || '';
+  if (hint.imageUrl){ $('rvImg').src = hint.imageUrl; $('rvImg').style.display = ''; }
+  else { $('rvImg').style.display = 'none'; }
+  show('revealView');
+
+  const total = rec.expireAt - rec.viewedAt;
+  clearInterval(revealTimer);
+  const tick = () => {
+    const remain = rec.expireAt - serverNow();
+    if (remain <= 0){ clearInterval(revealTimer); destructSequence(code, rec); return; }
+    const sec = Math.ceil(remain / 1000);
+    $('rvTimer').textContent = String(sec).padStart(2, '0');
+    $('rvTimer').classList.toggle('danger', sec <= 10);
+    $('fuse').style.width = Math.max(0, (remain / total) * 100) + '%';
+  };
+  tick();
+  revealTimer = setInterval(tick, 500);
+}
+
+/* 시그니처: 글자 먹칠 → 파기 스탬프 */
+function destructSequence(code, rec){
+  const el = $('rvText');
+  const original = el.textContent;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduced || !original){
+    showLocked('DESTROYED', '파기 완료', `열람 시간이 종료되었습니다.<br>기억한 내용을 팀원과 공유하세요.`);
+    return;
+  }
+  let step = 0; const steps = 6;
+  const iv = setInterval(() => {
+    step++;
+    el.textContent = original.split('').map(ch => {
+      if (ch === '\n' || ch === ' ') return ch;
+      return Math.random() < step / steps ? '█' : ch;
+    }).join('');
+    if (step >= steps){
+      clearInterval(iv);
+      setTimeout(() => showLocked('DESTROYED', '파기 완료', `열람 시간이 종료되었습니다.<br>기억한 내용을 팀원과 공유하세요.`), 450);
+    }
+  }, 130);
+}
+
+function showLocked(kicker, stamp, infoHtml){
+  clearInterval(revealTimer);
+  $('lockKicker').textContent = kicker;
+  $('lockStamp').textContent = stamp;
+  $('lockInfo').innerHTML = infoHtml;
+  show('lockView');
+}
+
+/* ---------- Enter 키 ---------- */
+$('codeInput').addEventListener('keydown', e => { if (e.key === 'Enter') submitCode(); });
+$('joinName').addEventListener('keydown', e => { if (e.key === 'Enter') join(); });
+
+/* ---------- 초기 진입 ---------- */
+window.addEventListener('load', async () => {
+  renderChip();
+  // config/game 첫 로드 대기
+  await Promise.all([db.ref('config').get().then(s => config = s.val() || {}),
+                     db.ref('game').get().then(s => game = s.val() || {})]);
+  if (!team){ show('joinView'); return; }
+  if (gameGate()) show('codeView');
+});
+</script>
+</body>
+</html>

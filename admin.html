@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OPERATOR CONSOLE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0F1216; --panel:#171C23; --panel2:#1D242E; --line:#2A3341;
+  --paper:#EDE7DA; --dim:#93A0B4; --gold:#E3A63C; --gold-soft:#C9963A;
+  --red:#FF4A3B; --steel:#7E93AC; --green:#5DBB7C;
+  --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans KR',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--ink); color:var(--paper); font-family:var(--sans); min-height:100vh; padding:20px 18px 80px}
+.shell{max-width:980px; margin:0 auto}
+.topline{
+  display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;
+  font-family:var(--mono); font-size:11px; letter-spacing:.14em; color:var(--dim);
+  border-bottom:1px solid var(--line); padding-bottom:12px; margin-bottom:20px;
+}
+.topline .dot{color:var(--gold)}
+.kicker{font-family:var(--mono); font-size:11px; letter-spacing:.22em; color:var(--gold); margin-bottom:8px}
+h1{font-size:24px; font-weight:700; margin-bottom:6px}
+h2{font-size:15px; font-weight:700; margin-bottom:12px}
+.sub{color:var(--dim); font-size:13px; line-height:1.7; word-break:keep-all}
+
+/* 게임 제어 밴드 */
+.ctrlband{display:flex; gap:10px; flex-wrap:wrap; align-items:center; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:18px}
+.ctrlband .state{font-family:var(--mono); font-size:13px; letter-spacing:.1em; margin-right:auto}
+.state b{color:var(--gold)}
+.state .done{color:var(--green)}
+.btn{padding:10px 16px; border:none; border-radius:9px; cursor:pointer; font-family:var(--sans); font-size:14px; font-weight:700; background:var(--gold); color:#1A1408}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:transparent; border:1px solid var(--line); color:var(--dim); font-weight:500}
+.btn.danger{background:transparent; border:1px solid var(--red); color:var(--red); font-weight:500}
+.btn.small{padding:7px 12px; font-size:12px}
+.btn:disabled{opacity:.4; cursor:not-allowed}
+
+/* 탭 */
+.tabs{display:flex; gap:6px; margin-bottom:18px; flex-wrap:wrap}
+.tab{padding:10px 16px; border-radius:9px; border:1px solid var(--line); background:transparent; color:var(--dim); font-size:14px; cursor:pointer; font-family:var(--sans)}
+.tab.on{background:var(--panel2); color:var(--paper); border-color:var(--gold-soft); font-weight:700}
+.pane{display:none} .pane.on{display:block; animation:fadein .25s ease}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+
+.card{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px; margin-bottom:16px}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:0 18px}
+@media(max-width:680px){.grid2{grid-template-columns:1fr}}
+label{display:block; font-family:var(--mono); font-size:11px; letter-spacing:.14em; color:var(--dim); margin:13px 0 6px}
+input[type=text],input[type=number],input[type=password],textarea,select{
+  width:100%; background:var(--panel2); border:1px solid var(--line); border-radius:9px;
+  color:var(--paper); font-size:14px; padding:11px 12px; outline:none; font-family:var(--sans);
+}
+textarea{min-height:110px; resize:vertical; line-height:1.7}
+input:focus,textarea:focus{border-color:var(--gold-soft)}
+.mono{font-family:var(--mono)}
+.msg{margin-top:10px; font-size:13px; color:var(--green); min-height:16px}
+.msg.err{color:var(--red)}
+.inline{display:flex; gap:8px; align-items:center}
+.inline input{flex:1}
+.check{display:flex; align-items:center; gap:8px; margin-top:13px; font-size:14px; color:var(--dim); cursor:pointer}
+.check input{width:auto}
+
+table{width:100%; border-collapse:collapse; font-size:13px}
+th{font-family:var(--mono); font-size:10px; letter-spacing:.12em; color:var(--dim); text-align:left; padding:8px 6px; border-bottom:1px solid var(--line); font-weight:500}
+td{padding:10px 6px; border-bottom:1px solid var(--line); vertical-align:top; word-break:break-word}
+tr:last-child td{border-bottom:none}
+td .code{font-family:var(--mono); font-weight:700; letter-spacing:.12em; color:var(--gold)}
+td .memo{color:var(--dim); font-size:12px}
+.empty{color:var(--dim); font-size:13px; text-align:center; padding:16px 0}
+.badge{display:inline-block; font-family:var(--mono); font-size:10px; letter-spacing:.1em; padding:3px 8px; border-radius:6px; border:1px solid var(--line); color:var(--dim)}
+.badge.g{border-color:var(--green); color:var(--green)}
+.badge.r{border-color:var(--red); color:var(--red)}
+.badge.y{border-color:var(--gold); color:var(--gold)}
+.feed{max-height:320px; overflow-y:auto}
+.feedrow{display:flex; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); font-size:13px; align-items:baseline}
+.feedrow .t{font-family:var(--mono); font-size:11px; color:var(--dim); min-width:44px}
+.feedrow .c{font-family:var(--mono); font-weight:700; color:var(--gold)}
+
+/* 인쇄 영역 */
+#printArea{display:none}
+@media print{
+  body{background:#fff; padding:0}
+  body.print-mode > .shell{display:none}
+  body.print-mode #printArea{display:block}
+  @page{margin:10mm}
+}
+#printArea{background:#fff; color:#111; font-family:var(--sans)}
+.qr-grid{display:grid; grid-template-columns:1fr 1fr; gap:0}
+.qr-card{
+  border:1px dashed #999; padding:10mm 6mm; text-align:center;
+  break-inside:avoid; page-break-inside:avoid; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  min-height:88mm;
+}
+.qr-card .qr{margin:0 auto}
+.qr-card .qcode{font-family:var(--mono); font-size:34px; font-weight:700; letter-spacing:.3em; margin:8mm 0 2mm; padding-left:.3em}
+.qr-card .qtitle{font-size:13px; color:#333; margin-bottom:2mm; min-height:16px}
+.qr-card .qguide{font-size:11px; color:#777}
+.qr-card .qhead{font-family:var(--mono); font-size:10px; letter-spacing:.2em; color:#999; margin-bottom:5mm}
+.sheet-table{width:100%; border-collapse:collapse; font-size:12px; margin-top:8mm}
+.sheet-table th,.sheet-table td{border:1px solid #bbb; padding:6px 8px; text-align:left; color:#111}
+.sheet-table th{background:#f0f0f0; font-weight:700}
+.sheet-title{font-size:18px; font-weight:700; margin-bottom:2mm}
+.sheet-sub{font-size:12px; color:#666; margin-bottom:4mm}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+<div class="topline">
+  <span><span class="dot">●</span> OPERATOR CONSOLE</span>
+  <span id="connState">-</span>
+</div>
+
+<!-- 로그인 -->
+<section id="gateView">
+  <div class="kicker">OPERATOR ONLY</div>
+  <h1>운영자 콘솔</h1>
+  <p class="sub">운영자 비밀번호를 입력하세요.</p>
+  <div class="card" style="max-width:380px">
+    <label>비밀번호</label>
+    <input type="password" id="gatePw">
+    <button class="btn" style="width:100%; margin-top:16px" onclick="gate()">입장</button>
+    <div class="msg err" id="gateMsg"></div>
+  </div>
+</section>
+
+<!-- 콘솔 -->
+<section id="consoleView" style="display:none">
+
+  <div class="ctrlband">
+    <span class="state" id="gameState">상태 확인 중...</span>
+    <button class="btn" id="btnStart" onclick="startGame()">▶ 게임 시작</button>
+    <button class="btn ghost" id="btnEnd" onclick="endGame()">■ 게임 종료</button>
+    <button class="btn danger" onclick="resetProgress()">진행 기록 초기화</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab on" data-pane="paneSetting" onclick="tabTo(this)">① 게임 설정</button>
+    <button class="tab" data-pane="paneHints" onclick="tabTo(this)">② 힌트 관리</button>
+    <button class="tab" data-pane="panePrint" onclick="tabTo(this)">③ QR 인쇄</button>
+    <button class="tab" data-pane="paneLive" onclick="tabTo(this)">④ 운영 현황</button>
+  </div>
+
+  <!-- ① 게임 설정 -->
+  <div class="pane on" id="paneSetting">
+    <div class="card">
+      <h2>시나리오 설정</h2>
+      <p class="sub">이 도구는 범용 틀입니다. 제목과 브리핑 문구만 바꾸면 공장 트러블, 살인사건, 보물찾기 등 어떤 시나리오로도 운영할 수 있습니다.</p>
+      <label>게임 제목</label>
+      <input type="text" id="cfgTitle" placeholder="예: 사라진 설계도를 찾아라">
+      <label>브리핑(인트로) 문구 — 팀 화면 상단에 표시</label>
+      <textarea id="cfgIntro" placeholder="예: 어젯밤 공장 제어실에서 핵심 설계도가 사라졌다. 현장 곳곳에 남은 단서를 찾아, 금고를 여는 최종 코드를 알아내라."></textarea>
+      <div class="grid2">
+        <div>
+          <label>최종 코드 (정답)</label>
+          <input type="text" id="cfgFinal" class="mono" placeholder="예: 7395 또는 TRUTH">
+        </div>
+        <div>
+          <label>오답 쿨다운 (초)</label>
+          <input type="number" id="cfgCooldown" value="180">
+        </div>
+        <div>
+          <label>기본 힌트 열람시간 (초)</label>
+          <input type="number" id="cfgViewSec" value="30">
+        </div>
+        <div>
+          <label>성공 메시지 — 최종 코드를 맞힌 팀에게 표시</label>
+          <input type="text" id="cfgSuccess" placeholder="예: 금고가 열렸다! 팀의 승리를 축하합니다.">
+        </div>
+      </div>
+      <label class="check"><input type="checkbox" id="cfgSelfJoin" checked> 팀 자유 등록 허용 (끄면 아래에서 미리 만든 팀만 입장 가능)</label>
+      <button class="btn" style="margin-top:18px" onclick="saveConfig()">설정 저장</button>
+      <div class="msg" id="cfgMsg"></div>
+    </div>
+
+    <div class="card">
+      <h2>팀 관리</h2>
+      <div class="inline">
+        <input type="text" id="newTeamId" class="mono" placeholder="팀 코드 (예: TEAM1)">
+        <button class="btn small" onclick="addTeam()">팀 추가</button>
+      </div>
+      <div id="teamAdminList" style="margin-top:14px"><div class="empty">등록된 팀이 없습니다.</div></div>
+      <button class="btn danger small" style="margin-top:12px" onclick="deleteAllTeams()">모든 팀 삭제</button>
+    </div>
+  </div>
+
+  <!-- ② 힌트 관리 -->
+  <div class="pane" id="paneHints">
+    <div class="card">
+      <h2 id="hintFormTitle">새 힌트 등록</h2>
+      <div class="grid2">
+        <div>
+          <label>힌트 코드 (4자리, 문자+숫자)</label>
+          <div class="inline">
+            <input type="text" id="hCode" class="mono" maxlength="4" style="text-transform:uppercase">
+            <button class="btn ghost small" onclick="genCode()">자동생성</button>
+          </div>
+        </div>
+        <div>
+          <label>열람 시간 (초) — 비우면 기본값 사용</label>
+          <input type="number" id="hViewSec" placeholder="기본값 사용">
+        </div>
+      </div>
+      <label>힌트 제목 (선택)</label>
+      <input type="text" id="hTitle" placeholder="예: 야간 근무일지의 한 줄">
+      <label>힌트 내용</label>
+      <textarea id="hContent" placeholder="참가자에게 보여줄 내용. 줄바꿈이 그대로 표시됩니다."></textarea>
+      <label>이미지 URL (선택)</label>
+      <input type="text" id="hImage" placeholder="https:// 이미지를 힌트 아래에 함께 표시">
+      <label>숨긴 위치 메모 (운영자 전용 — 참가자에게 보이지 않음)</label>
+      <input type="text" id="hMemo" placeholder="예: 2층 복도 소화기 뒤">
+      <div class="inline" style="margin-top:18px">
+        <button class="btn" onclick="saveHint()" id="hSaveBtn">힌트 저장</button>
+        <button class="btn ghost" onclick="clearHintForm()" id="hCancelBtn" style="display:none">수정 취소</button>
+      </div>
+      <div class="msg" id="hMsg"></div>
+    </div>
+
+    <div class="card">
+      <h2>등록된 힌트 <span class="badge y" id="hintCount">0</span></h2>
+      <div id="hintList"><div class="empty">등록된 힌트가 없습니다.</div></div>
+    </div>
+  </div>
+
+  <!-- ③ QR 인쇄 -->
+  <div class="pane" id="panePrint">
+    <div class="card">
+      <h2>QR 인쇄 시트</h2>
+      <p class="sub">모든 QR은 아래 힌트 페이지 주소 하나를 가리킵니다. 참가자는 QR을 스캔한 뒤, 인쇄물에 적힌 4자리 코드를 입력해 힌트를 엽니다.</p>
+      <label>힌트 페이지 주소 (GitHub Pages에 올린 hint.html의 실제 주소)</label>
+      <div class="inline">
+        <input type="text" id="cfgHintUrl" class="mono" placeholder="https://아이디.github.io/저장소/hint.html">
+        <button class="btn ghost small" onclick="autoHintUrl()">현재 주소로</button>
+      </div>
+      <label class="check"><input type="checkbox" id="prShowTitle" checked> 카드에 힌트 제목 함께 인쇄</label>
+      <div class="inline" style="margin-top:18px; flex-wrap:wrap">
+        <button class="btn" onclick="printCards()">🖨 QR 카드 인쇄 (A4 · 2열 자동 배치)</button>
+        <button class="btn ghost" onclick="printMap()">📋 운영자 배치표 인쇄</button>
+      </div>
+      <div class="msg" id="prMsg"></div>
+    </div>
+  </div>
+
+  <!-- ④ 운영 현황 -->
+  <div class="pane" id="paneLive">
+    <div class="card">
+      <h2>팀 현황 <span class="badge" id="liveClock">--:--</span></h2>
+      <div id="liveTeams"><div class="empty">-</div></div>
+    </div>
+    <div class="grid2" style="display:grid; gap:16px">
+      <div class="card" style="margin:0">
+        <h2>힌트 열람 피드</h2>
+        <div class="feed" id="viewFeed"><div class="empty">아직 열람 기록이 없습니다.</div></div>
+      </div>
+      <div class="card" style="margin:0">
+        <h2>최종 코드 시도 피드</h2>
+        <div class="feed" id="attemptFeed"><div class="empty">아직 시도 기록이 없습니다.</div></div>
+      </div>
+    </div>
+  </div>
+
+</section>
+</div>
+
+<!-- 인쇄 전용 영역 -->
+<div id="printArea"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+/* ================================================================
+   ★ Firebase 설정 — 세 파일(index/hint/admin) 모두 동일하게 교체
+================================================================ */
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+  projectId: "YOUR_PROJECT",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "0",
+  appId: "YOUR_APP_ID"
+};
+/* ★ 운영자 비밀번호 — 배포 전에 꼭 바꾸세요 */
+const ADMIN_PASS = "1234";
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+const $ = id => document.getElementById(id);
+let timeOffset = 0;
+db.ref('.info/serverTimeOffset').on('value', s => { timeOffset = s.val() || 0; });
+const serverNow = () => Date.now() + timeOffset;
+const norm = s => (s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtDur = ms => { if (ms == null || ms < 0) return '--:--'; const t = Math.floor(ms/1000); return `${String(Math.floor(t/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`; };
+const fmtClock = ms => { const d = new Date(ms); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
+
+db.ref('.info/connected').on('value', s => { $('connState').textContent = s.val() ? 'ONLINE' : 'OFFLINE'; });
+
+/* ---------- 게이트 ---------- */
+function gate(){
+  if ($('gatePw').value === ADMIN_PASS){
+    sessionStorage.setItem('hh_admin', '1');
+    $('gateView').style.display = 'none';
+    $('consoleView').style.display = '';
+    boot();
+  } else $('gateMsg').textContent = '비밀번호가 틀렸습니다.';
+}
+$('gatePw').addEventListener('keydown', e => { if (e.key === 'Enter') gate(); });
+
+/* ---------- 탭 ---------- */
+function tabTo(btn){
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('on'));
+  btn.classList.add('on');
+  $(btn.dataset.pane).classList.add('on');
+}
+
+/* ---------- 전역 상태 ---------- */
+let config = {}, game = {}, hints = {}, teams = {}, views = {}, attempts = {};
+let liveTimer = null;
+
+function boot(){
+  db.ref('config').on('value', s => { config = s.val() || {}; fillConfig(); });
+  db.ref('game').on('value', s => { game = s.val() || {}; renderGameState(); });
+  db.ref('hints').on('value', s => { hints = s.val() || {}; renderHints(); });
+  db.ref('teams').on('value', s => { teams = s.val() || {}; renderTeamsAdmin(); renderLive(); });
+  db.ref('views').on('value', s => { views = s.val() || {}; renderLive(); renderFeeds(); });
+  db.ref('attempts').on('value', s => { attempts = s.val() || {}; renderFeeds(); });
+  clearInterval(liveTimer);
+  liveTimer = setInterval(() => { renderGameState(); renderLive(); }, 1000);
+}
+
+/* ---------- 게임 제어 ---------- */
+function renderGameState(){
+  const started = !!game.startedAt, ended = !!game.endedAt;
+  let txt;
+  if (!started) txt = '상태: <b>대기</b> — 시작 전에는 힌트를 열 수 없습니다';
+  else if (ended) txt = '상태: <span class="done">종료</span>';
+  else txt = `상태: <b>진행중</b> · 경과 ${fmtDur(serverNow() - game.startedAt)}`;
+  $('gameState').innerHTML = txt;
+  $('btnStart').disabled = started && !ended;
+  $('btnEnd').disabled = !started || ended;
+  $('liveClock').textContent = started && !ended ? fmtDur(serverNow() - game.startedAt) : (ended ? '종료' : '대기');
+}
+function startGame(){
+  if (game.startedAt && !game.endedAt) return;
+  if (game.endedAt && !confirm('종료된 게임을 새로 시작합니다. 진행 기록(열람·완료)을 초기화할까요?\n확인 = 초기화 후 시작 / 취소 = 그냥 시작')) {
+    db.ref('game').set({ startedAt: serverNow() }); return;
+  }
+  if (game.endedAt) { wipeProgress().then(() => db.ref('game').set({ startedAt: serverNow() })); return; }
+  db.ref('game').set({ startedAt: serverNow() });
+}
+function endGame(){
+  if (!confirm('게임을 종료할까요? 힌트 열람과 최종 코드 입력이 모두 잠깁니다.')) return;
+  db.ref('game/endedAt').set(serverNow());
+}
+async function wipeProgress(){
+  await db.ref('views').remove();
+  await db.ref('attempts').remove();
+  const s = await db.ref('teams').get();
+  const t = s.val() || {};
+  const updates = {};
+  Object.keys(t).forEach(id => {
+    updates[`teams/${id}/finishedAt`] = null;
+    updates[`teams/${id}/elapsedMs`] = null;
+    updates[`teams/${id}/lockedUntil`] = null;
+    updates[`teams/${id}/wrongCount`] = 0;
+  });
+  await db.ref().update(updates);
+}
+function resetProgress(){
+  if (!confirm('열람 기록·완료 기록·오답 기록을 모두 초기화합니다. 힌트와 팀, 설정은 유지됩니다. 진행할까요?')) return;
+  wipeProgress().then(() => db.ref('game').remove());
+}
+
+/* ---------- 설정 ---------- */
+function fillConfig(){
+  const ae = document.activeElement;
+  if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA') && ae.closest('#paneSetting')) return;
+  $('cfgTitle').value = config.title || '';
+  $('cfgIntro').value = config.intro || '';
+  $('cfgFinal').value = config.finalCode || '';
+  $('cfgCooldown').value = config.cooldownSec ?? 180;
+  $('cfgViewSec').value = config.defaultViewSec ?? 30;
+  $('cfgSuccess').value = config.successMessage || '';
+  $('cfgSelfJoin').checked = config.allowSelfJoin !== false;
+  if (!$('cfgHintUrl').value) $('cfgHintUrl').value = config.hintUrl || '';
+}
+function saveConfig(){
+  const finalCode = norm($('cfgFinal').value);
+  db.ref('config').update({
+    title: $('cfgTitle').value.trim(),
+    intro: $('cfgIntro').value.trim(),
+    finalCode,
+    cooldownSec: Number($('cfgCooldown').value) || 180,
+    defaultViewSec: Number($('cfgViewSec').value) || 30,
+    successMessage: $('cfgSuccess').value.trim(),
+    allowSelfJoin: $('cfgSelfJoin').checked,
+    hintUrl: $('cfgHintUrl').value.trim()
+  }).then(() => {
+    $('cfgMsg').textContent = finalCode ? `저장했습니다. 최종 코드: ${finalCode}` : '저장했습니다. (최종 코드가 비어 있습니다!)';
+    setTimeout(() => $('cfgMsg').textContent = '', 3000);
+  });
+}
+
+/* ---------- 팀 관리 ---------- */
+function addTeam(){
+  const id = norm($('newTeamId').value);
+  if (!id) return;
+  db.ref('teams/' + id).transaction(cur => cur ? undefined : { name: id, createdAt: firebase.database.ServerValue.TIMESTAMP, wrongCount: 0 })
+    .then(r => { if (!r.committed) alert('이미 존재하는 팀입니다.'); else $('newTeamId').value = ''; });
+}
+function delTeam(id){
+  if (!confirm(`${id} 팀을 삭제할까요? 열람 기록도 함께 삭제됩니다.`)) return;
+  db.ref('teams/' + id).remove(); db.ref('views/' + id).remove(); db.ref('attempts/' + id).remove();
+}
+function deleteAllTeams(){
+  if (!confirm('모든 팀과 팀별 기록을 삭제합니다. 진행할까요?')) return;
+  db.ref('teams').remove(); db.ref('views').remove(); db.ref('attempts').remove();
+}
+function renderTeamsAdmin(){
+  const ids = Object.keys(teams).sort();
+  $('teamAdminList').innerHTML = !ids.length ? '<div class="empty">등록된 팀이 없습니다.</div>' :
+    `<table><thead><tr><th>팀 코드</th><th>생성</th><th></th></tr></thead><tbody>` +
+    ids.map(id => `<tr><td class="mono">${esc(id)}</td><td class="mono">${teams[id].createdAt ? fmtClock(teams[id].createdAt) : '-'}</td>
+      <td style="text-align:right"><button class="btn danger small" onclick="delTeam('${esc(id)}')">삭제</button></td></tr>`).join('') +
+    '</tbody></table>';
+}
+
+/* ---------- 힌트 관리 ---------- */
+let editingCode = null;
+const CODE_CHARS_A = 'ABCDEFGHJKMNPQRSTUVWXYZ';  /* I, L, O 제외 */
+const CODE_CHARS_N = '23456789';                  /* 0, 1 제외 */
+function genCode(){
+  let code;
+  do {
+    const pool = [
+      CODE_CHARS_A[Math.floor(Math.random()*CODE_CHARS_A.length)],
+      CODE_CHARS_N[Math.floor(Math.random()*CODE_CHARS_N.length)]
+    ];
+    const all = CODE_CHARS_A + CODE_CHARS_N;
+    while (pool.length < 4) pool.push(all[Math.floor(Math.random()*all.length)]);
+    for (let i = pool.length - 1; i > 0; i--){ const j = Math.floor(Math.random()*(i+1)); [pool[i],pool[j]] = [pool[j],pool[i]]; }
+    code = pool.join('');
+  } while (hints[code]);
+  $('hCode').value = code;
+}
+function saveHint(){
+  const code = norm($('hCode').value);
+  const content = $('hContent').value.trim();
+  if (code.length !== 4) return hMsg('코드는 4자리여야 합니다.', true);
+  if (!content) return hMsg('힌트 내용을 입력하세요.', true);
+  if (!editingCode && hints[code]) return hMsg('이미 사용 중인 코드입니다. 자동생성을 눌러보세요.', true);
+  if (editingCode && editingCode !== code) return hMsg('수정 시 코드는 바꿀 수 없습니다. 삭제 후 새로 등록하세요.', true);
+  const data = {
+    title: $('hTitle').value.trim(),
+    content,
+    imageUrl: $('hImage').value.trim(),
+    memo: $('hMemo').value.trim(),
+    viewSec: $('hViewSec').value ? Number($('hViewSec').value) : null,
+    updatedAt: firebase.database.ServerValue.TIMESTAMP,
+    createdAt: (editingCode && hints[editingCode]?.createdAt) || firebase.database.ServerValue.TIMESTAMP
+  };
+  db.ref('hints/' + code).set(data).then(() => {
+    hMsg(editingCode ? '수정했습니다.' : `저장했습니다. 코드: ${code}`);
+    clearHintForm();
+  });
+}
+function hMsg(t, err){ const m = $('hMsg'); m.textContent = t; m.className = 'msg' + (err ? ' err' : ''); if (!err) setTimeout(() => m.textContent = '', 3000); }
+function clearHintForm(){
+  editingCode = null;
+  ['hCode','hTitle','hContent','hImage','hMemo','hViewSec'].forEach(id => $(id).value = '');
+  $('hCode').disabled = false;
+  $('hintFormTitle').textContent = '새 힌트 등록';
+  $('hSaveBtn').textContent = '힌트 저장';
+  $('hCancelBtn').style.display = 'none';
+}
+function editHint(code){
+  const h = hints[code]; if (!h) return;
+  editingCode = code;
+  $('hCode').value = code; $('hCode').disabled = true;
+  $('hTitle').value = h.title || '';
+  $('hContent').value = h.content || '';
+  $('hImage').value = h.imageUrl || '';
+  $('hMemo').value = h.memo || '';
+  $('hViewSec').value = h.viewSec || '';
+  $('hintFormTitle').textContent = `힌트 수정 — ${code}`;
+  $('hSaveBtn').textContent = '수정 저장';
+  $('hCancelBtn').style.display = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function delHint(code){
+  if (!confirm(`힌트 ${code}를 삭제할까요?`)) return;
+  db.ref('hints/' + code).remove();
+}
+function renderHints(){
+  const codes = Object.keys(hints).sort((a,b) => (hints[a].createdAt||0) - (hints[b].createdAt||0));
+  $('hintCount').textContent = codes.length + '개';
+  $('hintList').innerHTML = !codes.length ? '<div class="empty">등록된 힌트가 없습니다.</div>' :
+    `<table><thead><tr><th>코드</th><th>내용</th><th>열람시간</th><th></th></tr></thead><tbody>` +
+    codes.map(c => {
+      const h = hints[c];
+      const preview = (h.content || '').slice(0, 60) + ((h.content||'').length > 60 ? '…' : '');
+      return `<tr>
+        <td><span class="code">${esc(c)}</span></td>
+        <td>${h.title ? `<b>${esc(h.title)}</b><br>` : ''}${esc(preview)}${h.memo ? `<br><span class="memo">📍 ${esc(h.memo)}</span>` : ''}</td>
+        <td class="mono">${h.viewSec || `기본(${config.defaultViewSec ?? 30})`}초</td>
+        <td style="text-align:right; white-space:nowrap">
+          <button class="btn ghost small" onclick="editHint('${esc(c)}')">수정</button>
+          <button class="btn danger small" onclick="delHint('${esc(c)}')">삭제</button>
+        </td></tr>`;
+    }).join('') + '</tbody></table>';
+}
+
+/* ---------- QR 인쇄 ---------- */
+function autoHintUrl(){
+  $('cfgHintUrl').value = location.href.replace(/admin\.html.*$/i, 'hint.html').split('#')[0].split('?')[0];
+}
+function getHintUrl(){
+  const url = $('cfgHintUrl').value.trim() || config.hintUrl;
+  if (!url || !/^https?:\/\//i.test(url)){
+    $('prMsg').textContent = '올바른 힌트 페이지 주소(https://…)를 먼저 입력하세요.';
+    $('prMsg').className = 'msg err';
+    return null;
+  }
+  db.ref('config/hintUrl').set(url);
+  $('prMsg').textContent = ''; 
+  return url;
+}
+function printCards(){
+  const url = getHintUrl(); if (!url) return;
+  const codes = Object.keys(hints).sort();
+  if (!codes.length){ $('prMsg').textContent = '인쇄할 힌트가 없습니다. 먼저 힌트를 등록하세요.'; $('prMsg').className = 'msg err'; return; }
+  const showTitle = $('prShowTitle').checked;
+  const area = $('printArea');
+  area.innerHTML = '<div class="qr-grid" id="qrGrid"></div>';
+  const grid = $('qrGrid');
+  codes.forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'qr-card';
+    card.innerHTML = `
+      <div class="qhead">${esc(config.title || 'HINT CARD')}</div>
+      <div class="qr" id="qr_${c}"></div>
+      <div class="qcode">${esc(c)}</div>
+      ${showTitle && hints[c].title ? `<div class="qtitle">${esc(hints[c].title)}</div>` : '<div class="qtitle"></div>'}
+      <div class="qguide">QR을 스캔한 뒤, 위 4자리 코드를 입력하세요</div>`;
+    grid.appendChild(card);
+    new QRCode(card.querySelector('.qr'), { text: url, width: 150, height: 150, correctLevel: QRCode.CorrectLevel.M });
+  });
+  doPrint();
+}
+function printMap(){
+  const codes = Object.keys(hints).sort();
+  if (!codes.length){ $('prMsg').textContent = '등록된 힌트가 없습니다.'; $('prMsg').className = 'msg err'; return; }
+  const area = $('printArea');
+  area.innerHTML = `
+    <div class="sheet-title">${esc(config.title || '힌트 헌팅')} — 운영자 배치표</div>
+    <div class="sheet-sub">인쇄일 ${new Date().toLocaleString('ko-KR')} · 총 ${codes.length}개 · 최종 코드: ${esc(config.finalCode || '(미설정)')}</div>
+    <table class="sheet-table"><thead><tr><th style="width:70px">코드</th><th>제목</th><th>숨긴 위치</th><th style="width:70px">열람시간</th><th style="width:60px">배치 ✓</th></tr></thead><tbody>` +
+    codes.map(c => { const h = hints[c];
+      return `<tr><td style="font-family:monospace; font-weight:700">${esc(c)}</td><td>${esc(h.title || '')}</td><td>${esc(h.memo || '')}</td><td>${h.viewSec || (config.defaultViewSec ?? 30)}초</td><td></td></tr>`;
+    }).join('') + '</tbody></table>';
+  doPrint();
+}
+function doPrint(){
+  document.body.classList.add('print-mode');
+  setTimeout(() => { window.print(); document.body.classList.remove('print-mode'); }, 350);
+}
+
+/* ---------- 운영 현황 ---------- */
+function renderLive(){
+  if (!$('paneLive').classList.contains('on')) return;
+  const ids = Object.keys(teams);
+  const rows = ids.map(id => {
+    const t = teams[id];
+    const v = views[id] ? Object.keys(views[id]).length : 0;
+    const locked = t.lockedUntil && serverNow() < t.lockedUntil;
+    return { id, v, wrong: t.wrongCount || 0, locked, lockedUntil: t.lockedUntil,
+             fin: !!t.finishedAt, elapsed: t.elapsedMs };
+  });
+  rows.sort((a,b) => (a.fin === b.fin) ? (a.fin ? a.elapsed - b.elapsed : b.v - a.v) : (a.fin ? -1 : 1));
+  let rank = 0;
+  $('liveTeams').innerHTML = !rows.length ? '<div class="empty">등록된 팀이 없습니다.</div>' :
+    `<table><thead><tr><th>순위</th><th>팀</th><th>열람</th><th>오답</th><th>상태</th><th>기록</th></tr></thead><tbody>` +
+    rows.map(r => `<tr>
+      <td class="mono">${r.fin ? (++rank === 1 ? '🏆 1' : rank) : '-'}</td>
+      <td class="mono">${esc(r.id)}</td>
+      <td class="mono">${r.v}</td>
+      <td class="mono">${r.wrong}</td>
+      <td>${r.fin ? '<span class="badge g">완료</span>' : r.locked ? `<span class="badge r">잠금 ${fmtDur(r.lockedUntil - serverNow())}</span>` : '<span class="badge y">진행중</span>'}</td>
+      <td class="mono">${r.fin ? fmtDur(r.elapsed) : '-'}</td></tr>`).join('') +
+    '</tbody></table>';
+}
+
+function renderFeeds(){
+  /* 열람 피드 */
+  const vf = [];
+  Object.entries(views).forEach(([tid, obj]) =>
+    Object.entries(obj || {}).forEach(([code, v]) => vf.push({ tid, code, ...v })));
+  vf.sort((a,b) => b.viewedAt - a.viewedAt);
+  $('viewFeed').innerHTML = !vf.length ? '<div class="empty">아직 열람 기록이 없습니다.</div>' :
+    vf.slice(0, 30).map(v => `<div class="feedrow"><span class="t">${fmtClock(v.viewedAt)}</span><span class="c">${esc(v.code)}</span><span>${esc(v.tid)} · ${esc(v.viewer || '')}</span></div>`).join('');
+
+  /* 시도 피드 */
+  const af = [];
+  Object.entries(attempts).forEach(([tid, obj]) =>
+    Object.values(obj || {}).forEach(a => af.push({ tid, ...a })));
+  af.sort((a,b) => (b.at || 0) - (a.at || 0));
+  $('attemptFeed').innerHTML = !af.length ? '<div class="empty">아직 시도 기록이 없습니다.</div>' :
+    af.slice(0, 30).map(a => `<div class="feedrow"><span class="t">${a.at ? fmtClock(a.at) : '--'}</span>
+      <span class="c" style="color:${a.correct ? 'var(--green)' : 'var(--red)'}">${esc(a.code)}</span>
+      <span>${esc(a.tid)} · ${esc(a.by || '')} ${a.correct ? '✔ 정답' : '✘ 오답'}</span></div>`).join('');
+}
+
+/* ---------- 초기 ---------- */
+window.addEventListener('load', () => {
+  if (sessionStorage.getItem('hh_admin') === '1'){
+    $('gateView').style.display = 'none';
+    $('consoleView').style.display = '';
+    boot();
+  }
+});
+</script>
+</body>
+</html>

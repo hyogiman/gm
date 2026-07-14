@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MISSION HQ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0F1216; --panel:#171C23; --panel2:#1D242E; --line:#2A3341;
+  --paper:#EDE7DA; --dim:#93A0B4; --gold:#E3A63C; --gold-soft:#C9963A;
+  --red:#FF4A3B; --steel:#7E93AC; --green:#5DBB7C;
+  --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans KR',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:var(--ink); color:var(--paper); font-family:var(--sans);
+  min-height:100dvh; display:flex; flex-direction:column; align-items:center; padding:20px 16px 60px;
+  background-image:
+    linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
+  background-size:28px 28px;
+}
+.topline{
+  width:100%; max-width:520px; display:flex; justify-content:space-between; align-items:center;
+  font-family:var(--mono); font-size:11px; letter-spacing:.14em; color:var(--dim);
+  border-bottom:1px solid var(--line); padding-bottom:10px; margin-bottom:26px;
+}
+.topline .dot{color:var(--gold)}
+#teamChip{cursor:pointer}
+#teamChip:hover{color:var(--paper)}
+.wrap{width:100%; max-width:520px}
+.view{display:none; animation:fadein .35s ease}
+.view.active{display:block}
+@keyframes fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){ *{animation:none !important; transition:none !important} }
+
+.kicker{font-family:var(--mono); font-size:11px; letter-spacing:.22em; color:var(--gold); margin-bottom:10px}
+h1{font-size:26px; font-weight:700; line-height:1.35; margin-bottom:8px; word-break:keep-all}
+h2{font-size:15px; font-weight:700; margin-bottom:12px}
+.sub{color:var(--dim); font-size:14px; line-height:1.75; word-break:keep-all; white-space:pre-wrap}
+
+.card{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:22px 20px; margin-top:16px}
+label{display:block; font-family:var(--mono); font-size:11px; letter-spacing:.14em; color:var(--dim); margin:14px 0 6px}
+input[type=text]{
+  width:100%; background:var(--panel2); border:1px solid var(--line); border-radius:10px;
+  color:var(--paper); font-size:16px; padding:13px 14px; outline:none; font-family:var(--sans);
+}
+input[type=text]:focus{border-color:var(--gold-soft)}
+button{
+  width:100%; margin-top:16px; padding:15px; border:none; border-radius:10px; cursor:pointer;
+  background:var(--gold); color:#1A1408; font-size:16px; font-weight:700; font-family:var(--sans);
+}
+button:active{transform:translateY(1px)}
+button.ghost{background:transparent; border:1px solid var(--line); color:var(--dim); font-weight:500; font-size:14px; padding:12px}
+button:disabled{opacity:.4; cursor:not-allowed}
+.msg{margin-top:12px; font-size:13px; color:var(--red); min-height:18px; word-break:keep-all}
+
+.statusband{display:flex; gap:10px; margin-top:16px}
+.stat{flex:1; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 12px; text-align:center}
+.stat .lb{font-family:var(--mono); font-size:10px; letter-spacing:.14em; color:var(--dim); margin-bottom:6px}
+.stat .vl{font-family:var(--mono); font-size:19px; font-weight:700}
+.stat .vl.live{color:var(--gold)}
+.stat .vl.done{color:var(--green)}
+
+.code-input{
+  font-family:var(--mono) !important; font-size:28px !important; font-weight:700;
+  letter-spacing:.35em; text-align:center; text-transform:uppercase; padding:16px 0 16px .35em !important;
+}
+.cooldown{
+  margin-top:14px; border:1px dashed var(--red); border-radius:10px; padding:14px; text-align:center;
+  font-family:var(--mono); color:var(--red); font-size:14px; letter-spacing:.06em;
+}
+.logrow{display:flex; justify-content:space-between; align-items:center; padding:11px 0; border-bottom:1px solid var(--line); font-size:14px}
+.logrow:last-child{border-bottom:none}
+.logrow .c{font-family:var(--mono); font-weight:700; letter-spacing:.15em; color:var(--gold)}
+.logrow .who{color:var(--dim); font-size:12px}
+.logrow .st{font-family:var(--mono); font-size:11px; letter-spacing:.1em}
+.st.burn{color:var(--red)} .st.open{color:var(--gold)}
+.empty{color:var(--dim); font-size:13px; text-align:center; padding:14px 0}
+
+.finish{border:1px solid var(--green); text-align:center; padding:34px 20px}
+.finish .stamp{
+  display:inline-block; font-family:var(--mono); font-size:22px; font-weight:700; letter-spacing:.28em;
+  color:var(--green); border:3px solid var(--green); border-radius:8px; padding:12px 20px 12px calc(20px + .28em);
+  transform:rotate(-6deg); animation:stampin .3s cubic-bezier(.2,2.2,.4,1) both;
+}
+@keyframes stampin{from{transform:rotate(-6deg) scale(2.2); opacity:0}to{transform:rotate(-6deg) scale(1); opacity:1}}
+.finish .big{font-family:var(--mono); font-size:40px; font-weight:700; margin:20px 0 4px}
+.finish .rk{color:var(--dim); font-size:14px}
+.finish .sm{margin-top:14px; color:var(--dim); font-size:14px; line-height:1.7; word-break:keep-all; white-space:pre-wrap}
+
+table{width:100%; border-collapse:collapse; font-size:13px}
+th{font-family:var(--mono); font-size:10px; letter-spacing:.14em; color:var(--dim); text-align:left; padding:8px 6px; border-bottom:1px solid var(--line); font-weight:500}
+td{padding:10px 6px; border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:none}
+tr.me td{color:var(--gold); font-weight:700}
+td.mono{font-family:var(--mono)}
+.rank1 td:first-child{color:var(--gold)}
+</style>
+</head>
+<body>
+
+<div class="topline">
+  <span><span class="dot">●</span> MISSION HQ</span>
+  <span id="teamChip">-</span>
+</div>
+
+<div class="wrap">
+
+  <!-- 팀 확인 -->
+  <section id="joinView" class="view">
+    <div class="kicker">IDENTIFY</div>
+    <h1 id="joinTitle">작전에 합류합니다</h1>
+    <p class="sub">운영자에게 안내받은 팀 코드를 입력하세요.</p>
+    <div class="card">
+      <label>팀 코드</label>
+      <input type="text" id="joinTeam" placeholder="예: TEAM1" autocomplete="off">
+      <label>내 이름</label>
+      <input type="text" id="joinName" placeholder="이름" autocomplete="off">
+      <button onclick="join()">합류하기</button>
+      <div class="msg" id="joinMsg"></div>
+    </div>
+  </section>
+
+  <!-- 허브 -->
+  <section id="hubView" class="view">
+    <div class="kicker">BRIEFING</div>
+    <h1 id="gameTitle">-</h1>
+    <p class="sub" id="gameIntro"></p>
+
+    <div class="statusband">
+      <div class="stat"><div class="lb">상태</div><div class="vl" id="stState">-</div></div>
+      <div class="stat"><div class="lb">경과 시간</div><div class="vl live" id="stElapsed">--:--</div></div>
+      <div class="stat"><div class="lb">열람 힌트</div><div class="vl" id="stViews">0</div></div>
+    </div>
+
+    <!-- 완료 카드 (성공 시 노출) -->
+    <div class="card finish" id="finishCard" style="display:none">
+      <div class="stamp">MISSION CLEAR</div>
+      <div class="big" id="fnTime">--:--</div>
+      <div class="rk" id="fnRank"></div>
+      <div class="sm" id="fnMsg"></div>
+    </div>
+
+    <!-- 최종 코드 -->
+    <div class="card" id="finalCard">
+      <h2>🔑 최종 코드 입력</h2>
+      <p class="sub">모든 단서가 가리키는 하나의 코드를 찾아 입력하세요. 오답 시 팀 전체가 일정 시간 입력이 잠깁니다.</p>
+      <input type="text" id="finalInput" class="code-input" placeholder="FINAL CODE" autocomplete="off">
+      <div class="cooldown" id="cooldownBox" style="display:none"></div>
+      <button onclick="submitFinal()" id="finalBtn">코드 확인</button>
+      <div class="msg" id="finalMsg"></div>
+    </div>
+
+    <!-- 힌트 열람 기록 -->
+    <div class="card">
+      <h2>📂 우리 팀 열람 기록</h2>
+      <div id="viewLog"><div class="empty">아직 열람한 힌트가 없습니다.</div></div>
+      <button class="ghost" onclick="location.href='hint.html'">힌트 코드 직접 입력하기</button>
+    </div>
+
+    <!-- 순위 -->
+    <div class="card">
+      <h2>🏁 팀 현황</h2>
+      <div id="rankBoard"><div class="empty">-</div></div>
+    </div>
+  </section>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script>
+/* ================================================================
+   ★ Firebase 설정 — 세 파일(index/hint/admin) 모두 동일하게 교체
+================================================================ */
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+  projectId: "YOUR_PROJECT",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "0",
+  appId: "YOUR_APP_ID"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+const $ = id => document.getElementById(id);
+let timeOffset = 0;
+db.ref('.info/serverTimeOffset').on('value', s => { timeOffset = s.val() || 0; });
+const serverNow = () => Date.now() + timeOffset;
+const norm = s => (s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtDur = ms => {
+  if (ms == null || ms < 0) return '--:--';
+  const t = Math.floor(ms / 1000);
+  const m = Math.floor(t / 60), s = t % 60;
+  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+};
+const fmtClock = ms => { const d = new Date(ms); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
+
+/* ---------- 세션 ---------- */
+let team = localStorage.getItem('hh_team') || '';
+let myName = localStorage.getItem('hh_name') || '';
+
+function show(id){ document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); $(id).classList.add('active'); }
+function renderChip(){ $('teamChip').textContent = team ? `${team} · ${myName}` : '팀 미확인'; }
+$('teamChip').onclick = () => {
+  if (!team) return;
+  if (!confirm('팀을 변경할까요?')) return;
+  detachTeamListeners();
+  team = ''; localStorage.removeItem('hh_team'); renderChip(); show('joinView');
+};
+
+/* ---------- 전역 상태 ---------- */
+let config = {}, game = {}, teams = {}, myViews = {}, myTeam = null;
+let uiTimer = null;
+
+db.ref('config').on('value', s => { config = s.val() || {}; renderStatic(); });
+db.ref('game').on('value', s => { game = s.val() || {}; renderAll(); });
+db.ref('teams').on('value', s => { teams = s.val() || {}; myTeam = team ? teams[team] : null; renderAll(); });
+
+let viewsRef = null, teamRef = null;
+function attachTeamListeners(){
+  viewsRef = db.ref('views/' + team);
+  viewsRef.on('value', s => { myViews = s.val() || {}; renderAll(); });
+}
+function detachTeamListeners(){ if (viewsRef) viewsRef.off(); myViews = {}; }
+
+/* ---------- 합류 ---------- */
+async function join(){
+  const t = norm($('joinTeam').value);
+  const n = $('joinName').value.trim();
+  if (!t) return $('joinMsg').textContent = '팀 코드를 입력하세요.';
+  if (!n) return $('joinMsg').textContent = '이름을 입력하세요.';
+  $('joinMsg').textContent = '확인 중...';
+  const snap = await db.ref('teams/' + t).get();
+  if (!snap.exists()){
+    if (config.allowSelfJoin === false) return $('joinMsg').textContent = '등록되지 않은 팀입니다. 운영자에게 확인하세요.';
+    await db.ref('teams/' + t).set({ name: t, createdAt: firebase.database.ServerValue.TIMESTAMP, wrongCount: 0 });
+  }
+  team = t; myName = n;
+  localStorage.setItem('hh_team', t); localStorage.setItem('hh_name', n);
+  renderChip(); attachTeamListeners(); show('hubView'); renderAll();
+}
+
+/* ---------- 렌더 ---------- */
+function renderStatic(){
+  $('gameTitle').textContent = config.title || '작전명 미정';
+  $('gameIntro').textContent = config.intro || '운영자가 브리핑을 준비하고 있습니다.';
+  $('joinTitle').textContent = config.title ? `「${config.title}」에 합류합니다` : '작전에 합류합니다';
+}
+
+function renderAll(){
+  if (!team || !$('hubView').classList.contains('active')) return;
+
+  /* 상태 배지 */
+  const started = !!game.startedAt, ended = !!game.endedAt;
+  $('stState').textContent = ended ? '종료' : started ? '진행중' : '대기';
+  $('stState').className = 'vl' + (started && !ended ? ' live' : '');
+
+  /* 열람 수 */
+  $('stViews').textContent = Object.keys(myViews).length;
+
+  /* 열람 로그 */
+  renderViewLog();
+
+  /* 완료/최종코드 카드 */
+  const fin = myTeam && myTeam.finishedAt;
+  $('finishCard').style.display = fin ? '' : 'none';
+  $('finalCard').style.display = fin ? 'none' : '';
+  if (fin){
+    $('fnTime').textContent = fmtDur(myTeam.elapsedMs);
+    $('fnRank').textContent = myRankText();
+    $('fnMsg').textContent = config.successMessage || '모든 단서를 연결해 냈습니다. 팀의 승리를 축하합니다!';
+  }
+
+  /* 순위판 */
+  renderRank();
+
+  /* 1초 UI 타이머(경과·쿨다운·열람상태) */
+  clearInterval(uiTimer);
+  const tick = () => {
+    $('stElapsed').textContent = fin
+      ? fmtDur(myTeam.elapsedMs)
+      : (game.startedAt && !game.endedAt ? fmtDur(serverNow() - game.startedAt) : '--:--');
+    renderCooldown();
+    renderViewLog();
+  };
+  tick(); uiTimer = setInterval(tick, 1000);
+}
+
+function renderViewLog(){
+  const entries = Object.entries(myViews).sort((a,b) => a[1].viewedAt - b[1].viewedAt);
+  if (!entries.length){
+    $('viewLog').innerHTML = '<div class="empty">아직 열람한 힌트가 없습니다.</div>';
+    return;
+  }
+  $('viewLog').innerHTML = entries.map(([code, v]) => {
+    const burned = serverNow() >= v.expireAt;
+    return `<div class="logrow">
+      <span class="c">${esc(code)}</span>
+      <span class="who">${esc(v.viewer)} · ${fmtClock(v.viewedAt)}</span>
+      <span class="st ${burned ? 'burn' : 'open'}">${burned ? '파기됨' : '열람중'}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderCooldown(){
+  const until = myTeam && myTeam.lockedUntil;
+  const locked = until && serverNow() < until;
+  $('cooldownBox').style.display = locked ? '' : 'none';
+  $('finalBtn').disabled = !!locked;
+  $('finalInput').disabled = !!locked;
+  if (locked) $('cooldownBox').textContent = `오답 잠금 — ${fmtDur(until - serverNow())} 후 다시 시도할 수 있습니다`;
+}
+
+function myRankText(){
+  const done = Object.entries(teams).filter(([,t]) => t.finishedAt)
+    .sort((a,b) => a[1].elapsedMs - b[1].elapsedMs);
+  const idx = done.findIndex(([id]) => id === team);
+  return idx >= 0 ? `전체 ${done.length}팀 완료 · 우리 팀 ${idx + 1}위` : '';
+}
+
+function renderRank(){
+  const list = Object.entries(teams).map(([id, t]) => ({
+    id, fin: !!t.finishedAt, elapsed: t.elapsedMs ?? Infinity,
+    views: 0, wrong: t.wrongCount || 0
+  }));
+  db.ref('views').get().then(s => {
+    const all = s.val() || {};
+    list.forEach(t => t.views = all[t.id] ? Object.keys(all[t.id]).length : 0);
+    list.sort((a,b) => (a.fin === b.fin) ? (a.fin ? a.elapsed - b.elapsed : b.views - a.views) : (a.fin ? -1 : 1));
+    let rank = 0;
+    $('rankBoard').innerHTML = !list.length ? '<div class="empty">등록된 팀이 없습니다.</div>' :
+      `<table><thead><tr><th>순위</th><th>팀</th><th>기록</th><th>힌트</th></tr></thead><tbody>` +
+      list.map(t => {
+        const r = t.fin ? ++rank : '-';
+        return `<tr class="${t.id === team ? 'me' : ''} ${r === 1 ? 'rank1' : ''}">
+          <td class="mono">${r === 1 ? '🏆 1' : r}</td>
+          <td>${esc(t.id)}</td>
+          <td class="mono">${t.fin ? fmtDur(t.elapsed) : '진행중'}</td>
+          <td class="mono">${t.views}</td></tr>`;
+      }).join('') + '</tbody></table>';
+  });
+}
+
+/* ---------- 최종 코드 ---------- */
+async function submitFinal(){
+  if (!game.startedAt) return $('finalMsg').textContent = '아직 게임이 시작되지 않았습니다.';
+  if (game.endedAt) return $('finalMsg').textContent = '게임이 종료되었습니다.';
+  const input = norm($('finalInput').value);
+  if (!input) return $('finalMsg').textContent = '코드를 입력하세요.';
+
+  /* 최신 잠금 상태 재확인 (다른 팀원이 방금 오답을 냈을 수 있음) */
+  const tSnap = await db.ref('teams/' + team).get();
+  const t = tSnap.val() || {};
+  if (t.finishedAt) return;
+  if (t.lockedUntil && serverNow() < t.lockedUntil){ myTeam = t; renderCooldown(); return; }
+
+  const answer = norm(config.finalCode || '');
+  if (!answer) return $('finalMsg').textContent = '최종 코드가 아직 설정되지 않았습니다. 운영자에게 문의하세요.';
+
+  if (input === answer){
+    const ref = db.ref('teams/' + team);
+    const res = await ref.transaction(cur => {
+      if (!cur || cur.finishedAt) return cur;
+      const now = serverNow();
+      return { ...cur, finishedAt: now, elapsedMs: now - game.startedAt };
+    });
+    db.ref('attempts/' + team).push({ code: input, correct: true, by: myName, at: firebase.database.ServerValue.TIMESTAMP });
+    if (res.committed){ $('finalMsg').textContent = ''; $('finalInput').value = ''; }
+  } else {
+    const cooldownSec = Number(config.cooldownSec) || 180;
+    await db.ref('teams/' + team).update({
+      lockedUntil: serverNow() + cooldownSec * 1000,
+      wrongCount: (t.wrongCount || 0) + 1
+    });
+    db.ref('attempts/' + team).push({ code: input, correct: false, by: myName, at: firebase.database.ServerValue.TIMESTAMP });
+    $('finalMsg').textContent = '틀린 코드입니다.';
+    $('finalInput').value = '';
+  }
+}
+
+$('finalInput').addEventListener('keydown', e => { if (e.key === 'Enter') submitFinal(); });
+$('joinName').addEventListener('keydown', e => { if (e.key === 'Enter') join(); });
+
+/* ---------- 초기 진입 ---------- */
+window.addEventListener('load', async () => {
+  renderChip();
+  await db.ref('config').get().then(s => { config = s.val() || {}; renderStatic(); });
+  if (team){ attachTeamListeners(); show('hubView'); renderAll(); }
+  else show('joinView');
+});
+</script>
+</body>
+</html>

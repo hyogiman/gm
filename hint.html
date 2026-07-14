@@ -230,12 +230,13 @@ $('teamChip').onclick = () => {
 };
 
 /* ---------- 게임 상태 (인증 후 리스너 시작) ---------- */
-let game = null, config = null, phases = {}, quests = {};
+let game = null, config = null, phases = {}, quests = {}, events = {};
 function startListeners(){
   db.ref('game').on('value', s => { game = s.val() || {}; });
   db.ref('config').on('value', s => { config = s.val() || {}; });
   db.ref('phases').on('value', s => { phases = s.val() || {}; });
   db.ref('quests').on('value', s => { quests = s.val() || {}; });
+  db.ref('events').on('value', s => { events = s.val() || {}; });
 
   /* 관리자 강퇴/팀이동 지시 수신 */
   db.ref('reassign/' + myToken).on('value', s => {
@@ -352,15 +353,17 @@ async function submitCode(){
 /* 열람 직후 Phase/Quest 발동 조건 체크 — 도달 기록은 팀 단위 1회 (팝업은 index에서 표시) */
 async function checkPhasesAfterView(){
   try {
-    if (!Object.keys(phases).length && !Object.keys(quests).length) return;
-    const [vs, ps, qs] = await Promise.all([
+    if (!Object.keys(phases).length && !Object.keys(quests).length && !Object.keys(events).length) return;
+    const [vs, ps, qs, es] = await Promise.all([
       db.ref('views/' + team).get(),
       db.ref(`teams/${team}/phases`).get(),
-      db.ref(`teams/${team}/quests`).get()
+      db.ref(`teams/${team}/quests`).get(),
+      db.ref(`teams/${team}/events`).get()
     ]);
     const viewed = new Set(Object.keys(vs.val() || {}));
     const reached = ps.val() || {};
     const qstate = qs.val() || {};
+    const fired = es.val() || {};
     Object.entries(phases).forEach(([pid, p]) => {
       if (reached[pid]) return;
       const reqH = Object.keys(p.requiredHints || {});
@@ -381,6 +384,21 @@ async function checkPhasesAfterView(){
       const tOk = hasTime ? (game && game.startedAt && serverNow() - game.startedAt >= Number(q.triggerAfterMin) * 60000) : true;
       if (!hOk || !tOk) return;
       db.ref(`teams/${team}/quests/${qid}`).transaction(cur => cur ? undefined : { status: 'offered', offeredAt: serverNow() });
+    });
+    /* 팝업 메시지(이벤트): 힌트·퀘스트·Phase·시간 조건 모두 충족 시 발동 */
+    Object.entries(events).forEach(([eid, ev]) => {
+      if (fired[eid]) return;
+      const reqH = Object.keys(ev.triggerHints || {});
+      const reqQ = Object.keys(ev.triggerQuests || {});
+      const reqP = Object.keys(ev.triggerPhases || {});
+      const hasTime = Number(ev.triggerAfterMin) > 0;
+      if (!reqH.length && !reqQ.length && !reqP.length && !hasTime) return;
+      const ok = reqH.every(c => viewed.has(c))
+        && reqQ.every(qid => qstate[qid] && qstate[qid].status === 'done')
+        && reqP.every(pid => reached[pid])
+        && (!hasTime || (game && game.startedAt && serverNow() - game.startedAt >= Number(ev.triggerAfterMin) * 60000));
+      if (!ok) return;
+      db.ref(`teams/${team}/events/${eid}`).transaction(cur => cur ? undefined : { at: serverNow() });
     });
   } catch(e){ /* 조건 체크 실패는 게임 진행에 영향 없음 */ }
 }

@@ -427,7 +427,7 @@ function nextModal(){
 function closeModal(){ nextModal(); }
 
 /* ---------- 전역 상태 ---------- */
-let config = {}, game = {}, teams = {}, myViews = {}, notices = {}, phases = {}, quests = {}, myTeam = null;
+let config = {}, game = {}, teams = {}, myViews = {}, notices = {}, phases = {}, quests = {}, events = {}, myTeam = null;
 let uiTimer = null;
 let prevStarted = null, prevEnded = null;   /* 게임 시작/종료 팝업 감지 */
 let bootDone = false;
@@ -447,10 +447,11 @@ db.ref('game').on('value', s => {
   prevStarted = started; prevEnded = ended;
   renderAll();
 });
-db.ref('teams').on('value', s => { teams = s.val() || {}; myTeam = team ? teams[team] : null; onPhaseData(); onQuestData(); renderAll(); });
+db.ref('teams').on('value', s => { teams = s.val() || {}; myTeam = team ? teams[team] : null; onPhaseData(); onQuestData(); onEventData(); renderAll(); });
 db.ref('notices').on('value', s => { notices = s.val() || {}; renderNotices(); maybePopupNotice(); });
 db.ref('phases').on('value', s => { phases = s.val() || {}; updateLogTab(); onPhaseData(); });
 db.ref('quests').on('value', s => { quests = s.val() || {}; updateLogTab(); onQuestData(); });
+db.ref('events').on('value', s => { events = s.val() || {}; updateLogTab(); onEventData(); });
 /* 관리자 팀 이동/강퇴 지시 수신 */
 db.ref('reassign/' + myToken).on('value', s => {
   const target = s.val();
@@ -465,7 +466,7 @@ db.ref('reassign/' + myToken).on('value', s => {
 });
 }   /* end startListeners */
 function updateLogTab(){
-  $('tabLogBtn').style.display = (Object.keys(phases).length || Object.keys(quests).length) ? '' : 'none';
+  $('tabLogBtn').style.display = (Object.keys(phases).length || Object.keys(quests).length || Object.keys(events).length) ? '' : 'none';
   $('questSection').style.display = Object.keys(quests).length ? '' : 'none';
 }
 
@@ -518,6 +519,45 @@ function applyPhaseState(){
   const p = phases[pid];
   openModal(`PHASE ${p.order}`, p.name || `새로운 국면 — Phase ${p.order}`, p.message || '', p.image || null);
 }
+/* ---------- 팝업 메시지 (이벤트) ---------- */
+function eventTriggerOk(ev){
+  const reqH = Object.keys(ev.triggerHints || {});
+  const reqQ = Object.keys(ev.triggerQuests || {});
+  const reqP = Object.keys(ev.triggerPhases || {});
+  const hasTime = Number(ev.triggerAfterMin) > 0;
+  if (!reqH.length && !reqQ.length && !reqP.length && !hasTime) return false;
+  const viewed = new Set(Object.keys(myViews));
+  const qstate = (myTeam && myTeam.quests) || {};
+  const reached = (myTeam && myTeam.phases) || {};
+  return reqH.every(c => viewed.has(c))
+    && reqQ.every(qid => qstate[qid] && qstate[qid].status === 'done')
+    && reqP.every(pid => reached[pid])
+    && (!hasTime || (game.startedAt && serverNow() - game.startedAt >= Number(ev.triggerAfterMin) * 60000));
+}
+function checkEvents(){
+  if (!team || !game.startedAt || game.endedAt || !Object.keys(events).length) return;
+  const fired = (myTeam && myTeam.events) || {};
+  Object.entries(events).forEach(([eid, ev]) => {
+    if (fired[eid]) return;
+    if (!eventTriggerOk(ev)) return;
+    db.ref(`teams/${team}/events/${eid}`).transaction(cur => cur ? undefined : { at: serverNow() });
+  });
+}
+function onEventData(){
+  if (!team) return;
+  checkEvents(); renderLog();
+  const fired = (myTeam && myTeam.events) || {};
+  const seen = JSON.parse(localStorage.getItem('hh_event_seen') || '{}');
+  let dirty = false;
+  Object.entries(fired).forEach(([eid, v]) => {
+    const ev = events[eid]; if (!ev) return;
+    if (seen[eid] === v.at) return;
+    seen[eid] = v.at; dirty = true;
+    if (bootDone) openModal('📡 INTEL', ev.name || '특별 정보 입수', ev.text || '', ev.image || null);
+  });
+  if (dirty) localStorage.setItem('hh_event_seen', JSON.stringify(seen));
+}
+
 function renderLog(){
   const reached = (myTeam && myTeam.phases) || {};
   const items = Object.entries(reached).map(([pid, v]) => ({ at: v.at || 0, type: 'phase', p: phases[pid] }))
@@ -525,6 +565,10 @@ function renderLog(){
   const qstate = (myTeam && myTeam.quests) || {};
   Object.entries(qstate).forEach(([qid, st]) => {
     if (st.status === 'done' && quests[qid]) items.push({ at: st.doneAt || 0, type: 'quest', q: quests[qid], st });
+  });
+  const fired = (myTeam && myTeam.events) || {};
+  Object.entries(fired).forEach(([eid, v]) => {
+    if (events[eid]) items.push({ at: v.at || 0, type: 'event', ev: events[eid] });
   });
   items.sort((a,b) => a.at - b.at);
   $('logBoard').innerHTML = !items.length ? '<div class="empty">아직 기록이 없습니다.</div>' :
@@ -534,6 +578,11 @@ function renderLog(){
         <div class="tm">${fmtClock(x.at)} 도달</div>
         <div class="tx">${esc(x.p.message || '')}</div>
         ${x.p.image ? `<img src="${x.p.image}" alt="Phase 이미지">` : ''}</div></div>`;
+      if (x.type === 'event') return `<div class="tl-item"><div class="tl-dot" style="background:var(--steel); box-shadow:0 0 8px rgba(126,147,172,.5)"></div><div class="tl-body">
+        <div class="tt">📡 ${esc(x.ev.name || '특별 정보')}</div>
+        <div class="tm">${fmtClock(x.at)} 수신</div>
+        <div class="tx">${esc(x.ev.text || '')}</div>
+        ${x.ev.image ? `<img src="${x.ev.image}" alt="이벤트 이미지">` : ''}</div></div>`;
       return `<div class="tl-item"><div class="tl-dot"></div><div class="tl-body">
         <div class="tt">🧭 퀘스트 완료 — ${esc(x.q.name || '')}</div>
         <div class="tm">${fmtClock(x.at)} · ${esc(x.st.by || '')} 제출</div>
@@ -757,7 +806,7 @@ let viewsRef = null, memberRef = null, reassignRef = null;
 function attachTeamListeners(){
   const t = team;
   viewsRef = db.ref('views/' + t);
-  viewsRef.on('value', s => { myViews = s.val() || {}; checkPhases(); checkQuests(); renderAll(); });
+  viewsRef.on('value', s => { myViews = s.val() || {}; checkPhases(); checkQuests(); checkEvents(); renderAll(); });
   memberRef = db.ref(`teams/${t}/members/${myToken}`);
   let first = true;
   memberRef.on('value', s => {
@@ -873,6 +922,7 @@ function renderAll(){
     renderCooldown();
     renderViewLog();
     checkQuests();   /* 시간 트리거 감지 */
+    checkEvents();
   };
   tick(); uiTimer = setInterval(tick, 1000);
 }

@@ -447,7 +447,7 @@ db.ref('game').on('value', s => {
   prevStarted = started; prevEnded = ended;
   renderAll();
 });
-db.ref('teams').on('value', s => { teams = s.val() || {}; myTeam = team ? teams[team] : null; onPhaseData(); onQuestData(); onEventData(); renderAll(); });
+db.ref('teams').on('value', s => { teams = s.val() || {}; myTeam = team ? teams[team] : null; updateLogTab(); onPhaseData(); onQuestData(); onEventData(); renderAll(); });
 db.ref('notices').on('value', s => { notices = s.val() || {}; renderNotices(); maybePopupNotice(); });
 db.ref('phases').on('value', s => { phases = s.val() || {}; updateLogTab(); onPhaseData(); });
 db.ref('quests').on('value', s => { quests = s.val() || {}; updateLogTab(); onQuestData(); });
@@ -466,8 +466,15 @@ db.ref('reassign/' + myToken).on('value', s => {
 });
 }   /* end startListeners */
 function updateLogTab(){
-  $('tabLogBtn').style.display = (Object.keys(phases).length || Object.keys(quests).length || Object.keys(events).length) ? '' : 'none';
-  $('questSection').style.display = Object.keys(quests).length ? '' : 'none';
+  const en = o => Object.values(o || {}).some(x => x && !x.disabled);
+  const hasRec = !!(myTeam && (myTeam.phases || myTeam.quests || myTeam.events));
+  const show = en(phases) || en(quests) || en(events) || hasRec;
+  $('tabLogBtn').style.display = show ? '' : 'none';
+  if (!show && $('tabLog').classList.contains('on')){
+    const mainBtn = document.querySelector('.tabbtn[data-pane="tabMain"]');
+    if (mainBtn) tabTo(mainBtn);
+  }
+  $('questSection').style.display = (en(quests) || (myTeam && myTeam.quests)) ? '' : 'none';
 }
 
 /* ---------- Phase ---------- */
@@ -897,7 +904,7 @@ function renderAll(){
   $('stState').textContent = ended ? '종료' : started ? '진행중' : '대기';
   $('stState').className = 'vl' + (started && !ended ? ' live' : '');
   $('stViews').textContent = Object.keys(myViews).length;
-  const useMoney = Object.keys(quests).length > 0;
+  const useMoney = Object.values(quests).some(q => q && !q.disabled) || !!(myTeam && (myTeam.money || myTeam.quests));
   $('stMoneyBox').style.display = useMoney ? '' : 'none';
   if (useMoney) $('stMoney').textContent = Number((myTeam && myTeam.money) || 0).toLocaleString();
 

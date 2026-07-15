@@ -322,6 +322,23 @@ async function submitCode(){
       $('openBtn').disabled = false; return;
     }
     const hint = hintSnap.val();
+
+    /* 순서 잠금: 앞 순서의 힌트를 모두 열람해야 열림 (순서 미지정 힌트는 자유) */
+    if (config && config.orderMode && hint.seq != null && Number(hint.prereqCount) > 0){
+      const vs = await db.ref('views/' + team).get();
+      const viewedCodes = Object.keys(vs.val() || {}).filter(c => c !== code);
+      let cnt = 0;
+      if (viewedCodes.length){
+        const snaps = await Promise.all(viewedCodes.map(c => db.ref('hints/' + c + '/seq').get()));
+        snaps.forEach(sn => { const v = sn.val(); if (v != null && Number(v) < Number(hint.seq)) cnt++; });
+      }
+      if (cnt < Number(hint.prereqCount)){
+        $('openBtn').disabled = false;
+        showLocked('SEQUENCE', '열람 불가', '아직 이 힌트를 열람할 수 없습니다.<br>다른 힌트를 먼저 획득해야 이 힌트가 열립니다.');
+        return;
+      }
+    }
+
     const viewSec = Number(hint.viewSec) || 30;
     const ref = db.ref(`views/${team}/${code}`);
 

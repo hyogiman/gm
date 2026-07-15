@@ -476,7 +476,6 @@ function updateLogTab(){
     const mainBtn = document.querySelector('.tabbtn[data-pane="tabMain"]');
     if (mainBtn) tabTo(mainBtn);
   }
-  $('questSection').style.display = (en(quests) || (myTeam && myTeam.quests)) ? '' : 'none';
 }
 
 /* ---------- Phase ---------- */
@@ -533,14 +532,14 @@ function eventTriggerOk(ev){
   const reqH = Object.keys(ev.triggerHints || {});
   const reqQ = Object.keys(ev.triggerQuests || {});
   const reqP = Object.keys(ev.triggerPhases || {});
-  const hasTime = Number(ev.triggerAfterMin) > 0;
-  if (!reqH.length && !reqQ.length && !reqP.length && !hasTime) return false;
+  const delay = trigDelaySec(ev);
+  if (!reqH.length && !reqQ.length && !reqP.length && !delay) return false;
   const qstate = (myTeam && myTeam.quests) || {};
   const reached = (myTeam && myTeam.phases) || {};
   if (!reqH.every(c => myViews[c])) return false;
   if (!reqQ.every(qid => qstate[qid] && qstate[qid].status === 'done')) return false;
   if (!reqP.every(pid => reached[pid])) return false;
-  if (!hasTime) return true;
+  if (!delay) return true;
   /* 시간 기준: 다른 조건이 있으면 마지막 충족 시점부터, 없으면 게임 시작부터 */
   const times = [
     ...reqH.map(c => (myViews[c] && myViews[c].viewedAt) || 0),
@@ -548,7 +547,7 @@ function eventTriggerOk(ev){
     ...reqP.map(pid => (reached[pid] && reached[pid].at) || 0)
   ];
   const base = times.length ? Math.max(...times) : (game.startedAt || 0);
-  return base > 0 && serverNow() - base >= Number(ev.triggerAfterMin) * 60000;
+  return base > 0 && serverNow() - base >= delay * 1000;
 }
 function checkEvents(){
   if (!team || !game.startedAt || game.endedAt || !Object.keys(events).length) return;
@@ -621,17 +620,18 @@ function rewardText(q){
   if (q.rewardText) parts.push(q.rewardText);
   return parts.length ? '보상: ' + esc(parts.join(' · ')) : '보상 없음';
 }
+const trigDelaySec = o => Number(o.triggerAfterSec) || (Number(o.triggerAfterMin) || 0) * 60;
 function questTriggerOk(q){
   const reqH = Object.keys(q.triggerHints || {});
-  const hasTime = Number(q.triggerAfterMin) > 0;
-  if (!reqH.length && !hasTime) return false;   /* 트리거 미설정 → 발동 안함 */
+  const delay = trigDelaySec(q);
+  if (!reqH.length && !delay) return false;   /* 트리거 미설정 → 발동 안함 */
   if (!reqH.every(c => myViews[c])) return false;
-  if (!hasTime) return true;
+  if (!delay) return true;
   /* 시간 기준: 힌트 조건이 있으면 마지막 힌트 열람 시점부터, 없으면 게임 시작부터 */
   const base = reqH.length
     ? Math.max(...reqH.map(c => (myViews[c] && myViews[c].viewedAt) || 0))
     : (game.startedAt || 0);
-  return base > 0 && serverNow() - base >= Number(q.triggerAfterMin) * 60000;
+  return base > 0 && serverNow() - base >= delay * 1000;
 }
 function checkQuests(){
   if (!team || !game.startedAt || game.endedAt || !Object.keys(quests).length) return;
@@ -719,7 +719,8 @@ function renderQuestList(){
     .map(([qid, st]) => ({ qid, st, q: quests[qid] }))
     .filter(x => x.q && x.st.status !== 'done')
     .sort((a,b) => (a.st.offeredAt || 0) - (b.st.offeredAt || 0));
-  if (!items.length){ $('questList').innerHTML = '<div class="empty">진행 중인 퀘스트가 없습니다.</div>'; return; }
+  $('questSection').style.display = items.length ? '' : 'none';
+  if (!items.length) return;
   $('questList').innerHTML = items.map(x => {
     const { qid, st, q } = x;
     let badge = '', body = '';
@@ -817,6 +818,10 @@ async function grantReward(qid, q){
       db.ref(`teams/${team}/quests/${qid}/rewardHint`).set({
         code: q.rewardHintCode, title: h.title || '', content: h.content || '', image: h.image || null
       });
+      /* 선물 힌트도 열람 처리 — 발동 조건·순서잠금에 반영, QR 재입력 차단 */
+      const gnow = serverNow();
+      db.ref(`views/${team}/${q.rewardHintCode}`).transaction(cur => cur ? undefined :
+        { viewedAt: gnow, expireAt: gnow, viewer: '퀘스트 보상', gift: true });
     }
   }
 }
@@ -949,10 +954,12 @@ function renderViewLog(){
   if (!entries.length){ $('viewLog').innerHTML = '<div class="empty">아직 열람한 힌트가 없습니다.</div>'; return; }
   $('viewLog').innerHTML = entries.map(([code, v]) => {
     const burned = serverNow() >= v.expireAt;
+    const stTag = v.gift ? '<span class="st open">🎁 선물</span>'
+      : `<span class="st ${burned ? 'burn' : 'open'}">${burned ? '파기됨' : '열람중'}</span>`;
     return `<div class="logrow">
       <span class="c">${esc(code)}</span>
       <span class="who">${esc(v.viewer)} · ${fmtClock(v.viewedAt)}</span>
-      <span class="st ${burned ? 'burn' : 'open'}">${burned ? '파기됨' : '열람중'}</span>
+      ${stTag}
     </div>`;
   }).join('');
 }

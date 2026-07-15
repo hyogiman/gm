@@ -388,8 +388,11 @@ td .memo{color:var(--dim); font-size:12px}
       <input type="text" id="qRewardText" placeholder="예: 우리 손주가 아끼던 물건을 주지">
       <label>발동 조건 ① — 힌트 열람 (선택한 힌트를 모두 열람하면)</label>
       <div id="questHintPick" style="margin-top:4px"><span class="empty" style="padding:6px 0; display:block; text-align:left">등록된 힌트가 없습니다.</span></div>
-      <label>발동 조건 ② — 경과 시간 (분, 비우면 사용 안함)</label>
-      <input type="number" id="qAfterMin" min="1" placeholder="예: 10 → 시작 10분 후">
+      <label>발동 조건 ② — 경과 시간 (분/초, 모두 비우면 사용 안함)</label>
+      <div class="inline">
+        <input type="number" id="qAfterMin" min="0" placeholder="분">
+        <input type="number" id="qAfterSec" min="0" max="59" placeholder="초">
+      </div>
       <p class="sub" style="margin-top:8px">①만 설정: 힌트 조건 충족 시 발동 / ②만 설정: 게임 시작 후 N분에 발동 / <b>둘 다 설정: ① 힌트를 모두 열람한 시점부터 N분 후</b> 발동합니다. 아무것도 설정하지 않으면 발동하지 않습니다.</p>
       <div class="inline" style="margin-top:18px">
         <button class="btn" onclick="saveQuest()" id="qSaveBtn">Quest 저장</button>
@@ -424,8 +427,11 @@ td .memo{color:var(--dim); font-size:12px}
       <div id="eventQuestPick" style="margin-top:4px"><span class="empty" style="padding:6px 0; display:block; text-align:left">등록된 퀘스트가 없습니다.</span></div>
       <label>발동 조건 ③ — Phase 도달 (선택한 Phase에 모두 도달)</label>
       <div id="eventPhasePick" style="margin-top:4px"><span class="empty" style="padding:6px 0; display:block; text-align:left">등록된 Phase가 없습니다.</span></div>
-      <label>발동 조건 ④ — 경과 시간 (분, 비우면 사용 안함)</label>
-      <input type="number" id="evAfterMin" min="1" placeholder="예: 20 → 시작 20분 후">
+      <label>발동 조건 ④ — 경과 시간 (분/초, 모두 비우면 사용 안함)</label>
+      <div class="inline">
+        <input type="number" id="evAfterMin" min="0" placeholder="분">
+        <input type="number" id="evAfterSec" min="0" max="59" placeholder="초">
+      </div>
       <p class="sub" style="margin-top:8px">설정한 조건들을 <b>모두(AND)</b> 충족해야 발동합니다. 시간(④)은 다른 조건(①~③)이 있으면 <b>마지막 조건이 충족된 시점부터</b>, 없으면 게임 시작부터 계산됩니다. 최소 1개는 설정해야 합니다.</p>
       <div class="inline" style="margin-top:18px">
         <button class="btn" onclick="saveEvent()" id="evSaveBtn">팝업 저장</button>
@@ -789,6 +795,8 @@ function renderTeamCtrl(){
   }).join('');
 }
 
+const fmtDelay = sec => { const m = Math.floor(sec/60), r = sec%60; return ((m ? m+'분' : '') + (r ? (m?' ':'')+r+'초' : '')) || '0초'; };
+
 /* ---------- 활성/비활성 토글 (Phase·Quest·팝업 공용) ---------- */
 function toggleActive(kind, id){
   const map = { phases, quests, events };
@@ -932,10 +940,10 @@ async function saveQuest(){
   const name = $('qName').value.trim();
   const dialog = $('qDialog').value.trim();
   const picked = [...document.querySelectorAll('.qHint:checked')].map(el => el.value);
-  const afterMin = Number($('qAfterMin').value) || 0;
+  const afterSecTotal = (Number($('qAfterMin').value) || 0) * 60 + (Number($('qAfterSec').value) || 0);
   if (!name) return qMsgFn('퀘스트 이름을 입력하세요.', true);
   if (!dialog) return qMsgFn('대화 내용을 입력하세요.', true);
-  if (!picked.length && !afterMin) return qMsgFn('발동 조건(힌트 또는 시간)을 하나 이상 설정하세요.', true);
+  if (!picked.length && !afterSecTotal) return qMsgFn('발동 조건(힌트 또는 시간)을 하나 이상 설정하세요.', true);
   const triggerHints = {};
   picked.forEach(c => triggerHints[c] = true);
   const answerPlain = $('qAnswer').value.trim();
@@ -952,7 +960,8 @@ async function saveQuest(){
     rewardHintCode: $('qRewardHint').value || null,
     rewardText: $('qRewardText').value.trim(),
     triggerHints: picked.length ? triggerHints : null,
-    triggerAfterMin: afterMin || null,
+    triggerAfterSec: afterSecTotal || null,
+    triggerAfterMin: null,
     disabled: (editingQuest && quests[editingQuest]?.disabled) || null,
     createdAt: (editingQuest && quests[editingQuest]?.createdAt) || firebase.database.ServerValue.TIMESTAMP
   };
@@ -966,7 +975,7 @@ async function saveQuest(){
 function qMsgFn(t, err){ const m = $('qMsg'); m.textContent = t; m.className = 'msg' + (err ? ' err' : ''); if (!err) setTimeout(() => m.textContent = '', 3000); }
 function clearQuestForm(){
   editingQuest = null;
-  ['qName','qNpc','qDialog','qAnswer','qThanks','qRewardMoney','qRewardText','qAfterMin'].forEach(id => $(id).value = '');
+  ['qName','qNpc','qDialog','qAnswer','qThanks','qRewardMoney','qRewardText','qAfterMin','qAfterSec'].forEach(id => $(id).value = '');
   $('qAnswerType').value = 'text'; $('qApproval').value = 'auto'; $('qRewardHint').value = '';
   clearImage('npc');
   document.querySelectorAll('.qHint').forEach(el => el.checked = false);
@@ -985,7 +994,9 @@ function editQuest(qid){
   $('qApproval').value = q.approval || 'auto';
   $('qRewardMoney').value = q.rewardMoney || '';
   $('qRewardText').value = q.rewardText || '';
-  $('qAfterMin').value = q.triggerAfterMin || '';
+  const qDelay = Number(q.triggerAfterSec) || (Number(q.triggerAfterMin) || 0) * 60;
+  $('qAfterMin').value = qDelay ? (Math.floor(qDelay / 60) || '') : '';
+  $('qAfterSec').value = qDelay ? (qDelay % 60 || '') : '';
   setImage('npc', q.npcImage || null);
   renderQuestPick(new Set(Object.keys(q.triggerHints || {})));
   $('qRewardHint').value = q.rewardHintCode || '';
@@ -1009,7 +1020,8 @@ function renderQuestsAdmin(){
       const trig = [];
       const th = Object.keys(x.triggerHints || {}).sort();
       if (th.length) trig.push(th.join('+'));
-      if (x.triggerAfterMin) trig.push(`${x.triggerAfterMin}분`);
+      const qd = Number(x.triggerAfterSec) || (Number(x.triggerAfterMin) || 0) * 60;
+      if (qd) trig.push(fmtDelay(qd));
       const rw = [];
       if (Number(x.rewardMoney) > 0) rw.push(`💰${Number(x.rewardMoney).toLocaleString()}`);
       if (x.rewardHintCode) rw.push(`🎁${x.rewardHintCode}`);
@@ -1072,6 +1084,10 @@ async function approveSubmit(tid, qid, ok){
         db.ref(`teams/${tid}/quests/${qid}/rewardHint`).set({
           code: q.rewardHintCode, title: h.title || '', content: h.content || '', image: h.image || null
         });
+        /* 선물 힌트도 열람 처리 */
+        const gnow = serverNow();
+        db.ref(`views/${tid}/${q.rewardHintCode}`).transaction(cur => cur ? undefined :
+          { viewedAt: gnow, expireAt: gnow, viewer: '퀘스트 보상', gift: true });
       }
     }
   } else {
@@ -1111,9 +1127,9 @@ function saveEvent(){
   const name = $('evName').value.trim();
   const text = $('evText').value.trim();
   const h = pickChecked('evHint'), q = pickChecked('evQuest'), p = pickChecked('evPhase');
-  const afterMin = Number($('evAfterMin').value) || 0;
+  const afterSecTotal = (Number($('evAfterMin').value) || 0) * 60 + (Number($('evAfterSec').value) || 0);
   if (!name && !text && !images.event) return evMsgFn('제목, 내용 또는 이미지를 입력하세요.', true);
-  if (!h.length && !q.length && !p.length && !afterMin) return evMsgFn('발동 조건을 하나 이상 설정하세요.', true);
+  if (!h.length && !q.length && !p.length && !afterSecTotal) return evMsgFn('발동 조건을 하나 이상 설정하세요.', true);
   const toMap = arr => { const m = {}; arr.forEach(k => m[k] = true); return m; };
   const data = {
     name, text,
@@ -1121,7 +1137,8 @@ function saveEvent(){
     triggerHints: h.length ? toMap(h) : null,
     triggerQuests: q.length ? toMap(q) : null,
     triggerPhases: p.length ? toMap(p) : null,
-    triggerAfterMin: afterMin || null,
+    triggerAfterSec: afterSecTotal || null,
+    triggerAfterMin: null,
     disabled: (editingEvent && events[editingEvent]?.disabled) || null,
     createdAt: (editingEvent && events[editingEvent]?.createdAt) || firebase.database.ServerValue.TIMESTAMP
   };
@@ -1131,7 +1148,7 @@ function saveEvent(){
 function evMsgFn(t, err){ const m = $('evMsg'); m.textContent = t; m.className = 'msg' + (err ? ' err' : ''); if (!err) setTimeout(() => m.textContent = '', 3000); }
 function clearEventForm(){
   editingEvent = null;
-  ['evName','evText','evAfterMin'].forEach(id => $(id).value = '');
+  ['evName','evText','evAfterMin','evAfterSec'].forEach(id => $(id).value = '');
   clearImage('event');
   renderEventPicks({ h: new Set(), q: new Set(), p: new Set() });
   $('eventFormTitle').textContent = '새 팝업 메시지 등록';
@@ -1143,7 +1160,9 @@ function editEvent(eid){
   editingEvent = eid;
   $('evName').value = ev.name || '';
   $('evText').value = ev.text || '';
-  $('evAfterMin').value = ev.triggerAfterMin || '';
+  const eDelay = Number(ev.triggerAfterSec) || (Number(ev.triggerAfterMin) || 0) * 60;
+  $('evAfterMin').value = eDelay ? (Math.floor(eDelay / 60) || '') : '';
+  $('evAfterSec').value = eDelay ? (eDelay % 60 || '') : '';
   setImage('event', ev.image || null);
   renderEventPicks({
     h: new Set(Object.keys(ev.triggerHints || {})),
@@ -1169,7 +1188,8 @@ function renderEventsAdmin(){
       const conds = Object.keys(x.triggerHints || {}).sort().map(esc);
       Object.keys(x.triggerQuests || {}).forEach(qid => conds.push('🧭' + esc((quests[qid] && quests[qid].name) || '삭제된 퀘스트')));
       Object.keys(x.triggerPhases || {}).forEach(pid => conds.push('P' + esc(String((phases[pid] && phases[pid].order) || '?'))));
-      if (x.triggerAfterMin) conds.push(esc(x.triggerAfterMin + '분'));
+      const ed = Number(x.triggerAfterSec) || (Number(x.triggerAfterMin) || 0) * 60;
+      if (ed) conds.push(esc(fmtDelay(ed)));
       return `<tr${x.disabled ? ' style="opacity:.45"' : ''}>
         <td><b>${esc(x.name || '')}</b>${x.disabled ? ' <span class="badge r">비활성</span>' : ''}${x.image ? ' <span class="badge y">🖼</span>' : ''}<br><span class="memo">${esc((x.text || '').slice(0, 50))}${(x.text||'').length > 50 ? '…' : ''}</span></td>
         <td class="mono" style="font-size:12px; letter-spacing:.05em">${conds.join(' & ')}</td>

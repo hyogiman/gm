@@ -354,6 +354,8 @@ async function submitCode(){
     if (result.committed){
       startReveal(code, hint, rec);                       // 최초 열람자
       checkPhasesAfterView();
+    } else if (rec && rec.gift){
+      showLocked('GIFT', '이미 획득', '이 힌트는 퀘스트 보상으로 이미 획득했습니다.<br>팀 화면의 기록 탭에서 내용을 확인하세요.');
     } else if (rec && rec.token === myToken && serverNow() < rec.expireAt){
       startReveal(code, hint, rec);                       // 본인이 새로고침한 경우
     } else if (rec && serverNow() < rec.expireAt){
@@ -396,14 +398,14 @@ async function checkPhasesAfterView(){
     Object.entries(quests).forEach(([qid, q]) => {
       if (q.disabled || qstate[qid]) return;
       const reqH = Object.keys(q.triggerHints || {});
-      const hasTime = Number(q.triggerAfterMin) > 0;
-      if (!reqH.length && !hasTime) return;
+      const delay = Number(q.triggerAfterSec) || (Number(q.triggerAfterMin) || 0) * 60;
+      if (!reqH.length && !delay) return;
       if (!reqH.every(c => viewsMap[c])) return;
-      if (hasTime){
+      if (delay){
         const base = reqH.length
           ? Math.max(...reqH.map(c => (viewsMap[c] && viewsMap[c].viewedAt) || 0))
           : ((game && game.startedAt) || 0);
-        if (!(base > 0) || serverNow() - base < Number(q.triggerAfterMin) * 60000) return;
+        if (!(base > 0) || serverNow() - base < delay * 1000) return;
       }
       db.ref(`teams/${team}/quests/${qid}`).transaction(cur => cur ? undefined : { status: 'offered', offeredAt: serverNow() });
     });
@@ -413,19 +415,19 @@ async function checkPhasesAfterView(){
       const reqH = Object.keys(ev.triggerHints || {});
       const reqQ = Object.keys(ev.triggerQuests || {});
       const reqP = Object.keys(ev.triggerPhases || {});
-      const hasTime = Number(ev.triggerAfterMin) > 0;
-      if (!reqH.length && !reqQ.length && !reqP.length && !hasTime) return;
+      const delay = Number(ev.triggerAfterSec) || (Number(ev.triggerAfterMin) || 0) * 60;
+      if (!reqH.length && !reqQ.length && !reqP.length && !delay) return;
       if (!reqH.every(c => viewsMap[c])) return;
       if (!reqQ.every(qid => qstate[qid] && qstate[qid].status === 'done')) return;
       if (!reqP.every(pid => reached[pid])) return;
-      if (hasTime){
+      if (delay){
         const times = [
           ...reqH.map(c => (viewsMap[c] && viewsMap[c].viewedAt) || 0),
           ...reqQ.map(qid => (qstate[qid] && qstate[qid].doneAt) || 0),
           ...reqP.map(pid => (reached[pid] && reached[pid].at) || 0)
         ];
         const base = times.length ? Math.max(...times) : ((game && game.startedAt) || 0);
-        if (!(base > 0) || serverNow() - base < Number(ev.triggerAfterMin) * 60000) return;
+        if (!(base > 0) || serverNow() - base < delay * 1000) return;
       }
       db.ref(`teams/${team}/events/${eid}`).transaction(cur => cur ? undefined : { at: serverNow() });
     });

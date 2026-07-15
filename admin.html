@@ -180,8 +180,10 @@ td .memo{color:var(--dim); font-size:12px}
     <div class="card">
       <h2>시나리오 설정</h2>
       <p class="sub">이 도구는 범용 틀입니다. 제목과 인트로만 바꾸면 공장 트러블, 살인사건, 보물찾기 등 어떤 시나리오로도 운영할 수 있습니다.</p>
-      <label>게임 제목</label>
+      <label>게임명</label>
       <input type="text" id="cfgTitle" placeholder="예: 사라진 설계도를 찾아라">
+      <label>인트로 제목 — 참가자 화면 인트로 카드의 헤더 (비우면 '인트로')</label>
+      <input type="text" id="cfgIntroTitle" placeholder="예: 사건 개요">
       <label>인트로 문구 — 팀 화면 메인에 표시</label>
       <textarea id="cfgIntro" placeholder="예: 어젯밤 공장 제어실에서 핵심 설계도가 사라졌다. 현장 곳곳에 남은 단서를 찾아, 금고를 여는 최종 코드를 알아내라."></textarea>
       <label>인트로 이미지 (선택 — 인트로 문구 아래에 표시)</label>
@@ -209,6 +211,8 @@ td .memo{color:var(--dim); font-size:12px}
       </div>
       <label class="check"><input type="checkbox" id="cfgSelfJoin" checked> 팀 자유 등록 허용 (끄면 팀 통제 탭에서 미리 만든 팀만 입장 가능)</label>
       <label class="check"><input type="checkbox" id="cfgOrderMode"> 힌트 순서 기능 사용 — 순서가 지정된 힌트는 앞 순서를 모두 열람해야 열립니다 (순서 미지정 힌트는 자유 열람)</label>
+      <label class="check"><input type="checkbox" id="cfgReqRole" checked> 프로필에 직급/직책 입력 요구 (끄면 이름만 입력)</label>
+      <label class="check"><input type="checkbox" id="cfgSolo"> <b>개인전으로 진행</b> — 팀 코드 없이 개인 단위로 참가하며, 열람·발동·순위가 모두 개인 기준이 됩니다</label>
       <button class="btn" style="margin-top:18px" onclick="saveConfig()">설정 저장</button>
       <div class="msg" id="cfgMsg"></div>
     </div>
@@ -709,12 +713,43 @@ function fillConfig(){
   $('cfgSuccess').value = config.successMessage || '';
   $('cfgSelfJoin').checked = config.allowSelfJoin !== false;
   $('cfgOrderMode').checked = config.orderMode === true;
+  $('cfgIntroTitle').value = config.introTitle || '';
+  $('cfgReqRole').checked = config.requireRole !== false;
+  $('cfgSolo').checked = config.soloMode === true;
   /* 평문 정답/초대코드는 운영자 전용 secrets에서 로드 */
   $('cfgFinal').value = secretsData.finalCode || '';
   $('cfgInvite').value = secretsData.inviteCode || '';
   if (!introFilled){ setImage('intro', config.introImage || null); introFilled = true; }
 }
 async function saveConfig(){
+  /* 팀전 ↔ 개인전 전환 감지: 이전 모드의 데이터가 남아 있으면 경고 후 정리 */
+  const newSolo = $('cfgSolo').checked;
+  const prevSolo = config.soloMode === true;
+  if (newSolo !== prevSolo){
+    const targets = Object.entries(teams)
+      .filter(([, t]) => newSolo ? !(t && t.solo) : !!(t && t.solo))
+      .map(([id]) => id);
+    if (targets.length){
+      const ok = confirm(
+        `⚠ ${newSolo ? '개인전' : '팀전'}으로 전환합니다.\n\n` +
+        `기존 ${newSolo ? '팀전' : '개인전'} 데이터 ${targets.length}개가 모두 삭제됩니다.\n` +
+        `(팀/참가자 명단, 힌트 열람, 퀘스트·Phase·팝업 진행, 완료 기록, 오답 기록 포함)\n\n` +
+        `삭제된 참가자는 화면에서 자동으로 내보내지며 다시 프로필을 등록해야 합니다.\n계속할까요?`);
+      if (!ok){
+        $('cfgSolo').checked = prevSolo;
+        $('cfgMsg').textContent = '모드 전환이 취소되었습니다. 다른 설정을 저장하려면 다시 저장을 누르세요.';
+        setTimeout(() => $('cfgMsg').textContent = '', 4000);
+        return;
+      }
+      const updates = {};
+      targets.forEach(id => {
+        updates['teams/' + id] = null;
+        updates['views/' + id] = null;
+        updates['attempts/' + id] = null;
+      });
+      await db.ref().update(updates);
+    }
+  }
   const finalPlain = norm($('cfgFinal').value);
   const invitePlain = norm($('cfgInvite').value);
   await db.ref('config').update({
@@ -726,7 +761,10 @@ async function saveConfig(){
     cooldownSec: Number($('cfgCooldown').value) || 180,
     successMessage: $('cfgSuccess').value.trim(),
     allowSelfJoin: $('cfgSelfJoin').checked,
-    orderMode: $('cfgOrderMode').checked
+    orderMode: $('cfgOrderMode').checked,
+    introTitle: $('cfgIntroTitle').value.trim(),
+    requireRole: $('cfgReqRole').checked,
+    soloMode: $('cfgSolo').checked
   });
   await db.ref('secrets').update({ finalCode: finalPlain || null, inviteCode: invitePlain || null });
   $('cfgMsg').textContent = finalPlain ? `저장했습니다. 최종 코드: ${finalPlain}` : '저장했습니다. (최종 코드가 비어 있습니다!)';
@@ -777,7 +815,7 @@ function renderTeamCtrl(){
     const members = Object.entries(t.members || {});
     return `<div class="teamblock">
       <div class="thead">
-        <span class="tid">${esc(id)}</span>
+        <span class="tid">${esc(id)}${t.name && t.name !== id ? ` <span class="memo" style="font-weight:500">· ${esc(t.name)}</span>` : ''}</span>
         ${t.finishedAt ? '<span class="badge g">완료</span>' : ''}
         ${locked ? `<span class="badge r">잠금 페널티 ${fmtDur(t.lockedUntil - serverNow())}</span>` : ''}
         <span class="tbtns">
@@ -1393,7 +1431,7 @@ function renderLive(){
     const v = views[id] ? Object.keys(views[id]).length : 0;
     const locked = t.lockedUntil && serverNow() < t.lockedUntil;
     const phaseOrders = Object.keys(t.phases || {}).map(pid => (phases[pid] && phases[pid].order) || 0);
-    return { id, v, wrong: t.wrongCount || 0, locked, lockedUntil: t.lockedUntil,
+    return { id, name: t.name || id, v, wrong: t.wrongCount || 0, locked, lockedUntil: t.lockedUntil,
              members: Object.keys(t.members || {}).length,
              phase: phaseOrders.length ? Math.max(...phaseOrders) : 0,
              money: t.money || 0,
@@ -1405,7 +1443,7 @@ function renderLive(){
     `<table><thead><tr><th>순위</th><th>팀</th><th>인원</th><th>열람</th><th>Phase</th><th>💰</th><th>오답</th><th>상태</th><th>기록</th></tr></thead><tbody>` +
     rows.map(r => `<tr>
       <td class="mono">${r.fin ? (++rank === 1 ? '🏆 1' : rank) : '-'}</td>
-      <td class="mono">${esc(r.id)}</td>
+      <td class="mono">${r.name !== r.id ? esc(r.name) : esc(r.id)}</td>
       <td class="mono">${r.members}</td>
       <td class="mono">${r.v}</td>
       <td class="mono">${r.phase ? 'P' + r.phase : '-'}</td>

@@ -107,19 +107,23 @@ button:disabled{opacity:.4; cursor:not-allowed}
 
   <!-- 1. 팀 확인 -->
   <section id="joinView" class="view">
-    <div class="kicker">IDENTIFY</div>
-    <h1>소속 팀을 확인합니다</h1>
-    <p class="sub">힌트는 팀 단위로 기록됩니다. 운영자에게 안내받은 팀 코드를 입력하세요.</p>
+    <div class="kicker">PROFILE</div>
+    <h1>프로필 등록</h1>
+    <p class="sub">운영자에게 안내받은 초대 코드와 팀/개인 프로필을 입력해 주세요.</p>
     <div class="card">
       <label>초대 코드</label>
       <input type="text" id="joinInvite" placeholder="운영자에게 안내받은 초대 코드" autocomplete="off">
-      <label>팀 코드</label>
-      <input type="text" id="joinTeam" placeholder="예: TEAM1" autocomplete="off">
+      <div id="teamField">
+        <label>팀 코드</label>
+        <input type="text" id="joinTeam" placeholder="예: TEAM1" autocomplete="off">
+      </div>
       <label>내 이름</label>
       <input type="text" id="joinName" placeholder="힌트 열람 기록에 남습니다" autocomplete="off">
-      <label>직급/직책</label>
-      <input type="text" id="joinRole" placeholder="예: 책임, 파트장" autocomplete="off">
-      <button onclick="join()">확인</button>
+      <div id="roleField">
+        <label>직급/직책</label>
+        <input type="text" id="joinRole" placeholder="예: 책임, 파트장" autocomplete="off">
+      </div>
+      <button onclick="join()">프로필 등록 및 참가</button>
       <div class="msg" id="joinMsg"></div>
     </div>
   </section>
@@ -134,7 +138,7 @@ button:disabled{opacity:.4; cursor:not-allowed}
       <button onclick="submitCode()" id="openBtn">힌트 열람</button>
       <div class="msg" id="codeMsg"></div>
     </div>
-    <div class="notice">힌트는 <b>팀에서 단 한 명, 단 한 번</b>만 열 수 있습니다. 열람 즉시 파기 카운트다운이 시작되니, 팀원과 함께일 때 여세요.</div>
+    <div class="notice" id="hintNotice">힌트는 <b>팀에서 단 한 명, 단 한 번</b>만 열 수 있습니다. 열람 즉시 파기 카운트다운이 시작되니, 팀원과 함께일 때 여세요.</div>
   </section>
 
   <!-- 3. 열람 -->
@@ -223,7 +227,19 @@ function show(id){
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   $(id).classList.add('active');
 }
-function renderChip(){ $('teamChip').textContent = team ? `${team} · ${myName}` : '팀 미확인'; }
+function renderChip(){
+  const solo = config && config.soloMode === true;
+  $('teamChip').textContent = team ? (solo ? `개인전 · ${myName}` : `${team} · ${myName}`) : '미등록';
+}
+function applySoloUI(){
+  const solo = config && config.soloMode === true;
+  $('teamField').style.display = solo ? 'none' : '';
+  $('roleField').style.display = (config && config.requireRole === false) ? 'none' : '';
+  $('hintNotice').innerHTML = solo
+    ? '힌트는 <b>단 한 번</b>만 열 수 있습니다. 열람 즉시 파기 카운트다운이 시작되니, 준비된 상태에서 여세요.'
+    : '힌트는 <b>팀에서 단 한 명, 단 한 번</b>만 열 수 있습니다. 열람 즉시 파기 카운트다운이 시작되니, 팀원과 함께일 때 여세요.';
+  renderChip();
+}
 $('teamChip').onclick = () => {
   if (team && !confirm('팀을 변경할까요? (열람 기록은 팀에 그대로 남습니다)')) return;
   team = ''; localStorage.removeItem('hh_team'); renderChip(); show('joinView');
@@ -233,7 +249,7 @@ $('teamChip').onclick = () => {
 let game = null, config = null, phases = {}, quests = {}, events = {};
 function startListeners(){
   db.ref('game').on('value', s => { game = s.val() || {}; });
-  db.ref('config').on('value', s => { config = s.val() || {}; });
+  db.ref('config').on('value', s => { config = s.val() || {}; applySoloUI(); });
   db.ref('phases').on('value', s => { phases = s.val() || {}; });
   db.ref('quests').on('value', s => { quests = s.val() || {}; });
   db.ref('events').on('value', s => { events = s.val() || {}; });
@@ -275,12 +291,19 @@ function gameGate(){
 
 /* ---------- 팀 확인 ---------- */
 async function join(){
-  const t = norm($('joinTeam').value);
+  const solo = config && config.soloMode === true;
   const n = $('joinName').value.trim();
+  const needRole = !(config && config.requireRole === false);
   const r = $('joinRole').value.trim();
-  if (!t) return $('joinMsg').textContent = '팀 코드를 입력하세요.';
   if (!n) return $('joinMsg').textContent = '이름을 입력하세요.';
-  if (!r) return $('joinMsg').textContent = '직급/직책을 입력하세요.';
+  if (needRole && !r) return $('joinMsg').textContent = '직급/직책을 입력하세요.';
+  let t;
+  if (solo){
+    t = 'P' + myToken.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 10);
+  } else {
+    t = norm($('joinTeam').value);
+    if (!t) return $('joinMsg').textContent = '팀 코드를 입력하세요.';
+  }
   $('joinMsg').textContent = '확인 중...';
   if (config && config.inviteCodeHash){
     const iv = norm($('joinInvite').value);
@@ -289,9 +312,10 @@ async function join(){
   }
   const snap = await db.ref('teams/' + t).get();
   if (!snap.exists()){
-    const allow = (config && config.allowSelfJoin !== false);
-    if (!allow) return $('joinMsg').textContent = '등록되지 않은 팀입니다. 운영자에게 확인하세요.';
-    await db.ref('teams/' + t).set({ name: t, createdAt: firebase.database.ServerValue.TIMESTAMP, wrongCount: 0 });
+    if (!solo && config && config.allowSelfJoin === false) return $('joinMsg').textContent = '등록되지 않은 팀입니다. 운영자에게 확인하세요.';
+    await db.ref('teams/' + t).set({ name: solo ? n : t, solo: solo || null, createdAt: firebase.database.ServerValue.TIMESTAMP, wrongCount: 0 });
+  } else if (solo){
+    await db.ref('teams/' + t).update({ name: n, solo: true });
   }
   team = t; myName = n; myRole = r;
   localStorage.setItem('hh_team', t); localStorage.setItem('hh_name', n); localStorage.setItem('hh_role', r);
@@ -507,6 +531,7 @@ async function initAfterAuth(){
   startListeners();
   await Promise.all([db.ref('config').get().then(s => config = s.val() || {}),
                      db.ref('game').get().then(s => game = s.val() || {})]).catch(() => {});
+  applySoloUI();
   if (!team){ show('joinView'); return; }
   if (gameGate()) show('codeView');
 }

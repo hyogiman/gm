@@ -39,6 +39,19 @@ body[data-theme="violet"]{--ink:#120E19; --panel:#1A1424; --panel2:#20182D; --li
 .tl-body .tm{font-family:var(--mono); font-size:11px; color:var(--dim); margin-bottom:6px; letter-spacing:.1em}
 .tl-body .tx{font-size:14px; color:var(--dim); line-height:1.75; white-space:pre-wrap; word-break:keep-all}
 .tl-body img{width:100%; max-width:320px; border-radius:10px; margin-top:8px; border:1px solid var(--line); display:block}
+/* 공지 접이식 게시판 */
+.nb-head{width:100%; display:flex; justify-content:space-between; align-items:center; background:none; border:none; margin:0; padding:17px 20px; color:var(--paper); font-size:15px; font-weight:700; font-family:var(--sans); cursor:pointer; border-radius:0; text-align:left}
+.nb-cnt{font-family:var(--mono); font-size:11px; color:var(--dim); font-weight:500; margin-left:4px}
+.nb-new{color:var(--red); margin-left:7px; font-size:12px; animation:nblink 1.2s ease infinite}
+@keyframes nblink{50%{opacity:.2}}
+.nrow{border-top:1px solid var(--line)}
+.nrow-t{width:100%; display:flex; gap:10px; align-items:center; background:none; border:none; margin:0; padding:13px 20px; color:var(--paper); font-family:var(--sans); font-size:14px; cursor:pointer; text-align:left; border-radius:0; font-weight:500}
+.nt-time{font-family:var(--mono); font-size:11px; color:var(--dim); flex:none}
+.nt-title{flex:1; word-break:keep-all}
+.nt-chev{color:var(--dim); font-size:11px; flex:none}
+.ntag{display:inline-block; font-family:var(--mono); font-size:10px; color:var(--red); border:1px solid var(--red); border-radius:5px; padding:0 5px; margin-right:7px; font-weight:700; vertical-align:1px}
+.nrow-b{padding:0 20px 16px; font-size:14px; line-height:1.8; color:var(--dim); white-space:pre-wrap; word-break:keep-all}
+.nrow-b img{width:100%; border-radius:10px; margin-top:10px; border:1px solid var(--line); display:block}
 /* 퀘스트 대화 */
 .qv{display:flex; gap:12px; align-items:flex-start}
 .qv .npc{width:82px; height:82px; border-radius:12px; background:var(--panel2); border:1px solid var(--line); flex:none; overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:38px}
@@ -191,7 +204,7 @@ td.mono{font-family:var(--mono)}
 
 <div class="topline">
   <span style="display:flex; gap:8px; align-items:center">
-    <span class="dot">●</span>
+    <span class="dot" id="topDot">●</span>
     <span id="stState">MISSION HQ</span>
     <span id="stElapsed" style="color:var(--gold); font-weight:700"></span>
   </span>
@@ -205,19 +218,23 @@ td.mono{font-family:var(--mono)}
 
   <!-- 팀 확인 -->
   <section id="joinView" class="view">
-    <div class="kicker">IDENTIFY</div>
-    <h1 id="joinTitle">작전에 합류합니다</h1>
-    <p class="sub">운영자에게 안내받은 팀 코드를 입력하세요.</p>
+    <div class="kicker">PROFILE</div>
+    <h1>프로필 등록</h1>
+    <p class="sub">운영자에게 안내받은 초대 코드와 팀/개인 프로필을 입력해 주세요.</p>
     <div class="card">
       <label>초대 코드</label>
       <input type="text" id="joinInvite" placeholder="운영자에게 안내받은 초대 코드" autocomplete="off">
-      <label>팀 코드</label>
-      <input type="text" id="joinTeam" placeholder="예: TEAM1" autocomplete="off">
+      <div id="teamField">
+        <label>팀 코드</label>
+        <input type="text" id="joinTeam" placeholder="예: TEAM1" autocomplete="off">
+      </div>
       <label>내 이름</label>
       <input type="text" id="joinName" placeholder="이름" autocomplete="off">
-      <label>직급/직책</label>
-      <input type="text" id="joinRole" placeholder="예: 책임, 파트장" autocomplete="off">
-      <button onclick="join()">합류하기</button>
+      <div id="roleField">
+        <label>직급/직책</label>
+        <input type="text" id="joinRole" placeholder="예: 책임, 파트장" autocomplete="off">
+      </div>
+      <button onclick="join()">프로필 등록 및 참가</button>
       <div class="msg" id="joinMsg"></div>
     </div>
   </section>
@@ -230,13 +247,16 @@ td.mono{font-family:var(--mono)}
       <div class="kicker">INTRO</div>
       <h1 id="gameTitle">-</h1>
 
-      <div class="card">
-        <h2>📢 운영자 공지</h2>
-        <div id="noticeBoard"><div class="empty">아직 공지가 없습니다.</div></div>
+      <div class="card" style="padding:0; overflow:hidden">
+        <button class="nb-head" onclick="toggleNoticeBoard()">
+          <span>📢 운영자 공지 <span class="nb-cnt" id="nbCount"></span><span class="nb-new" id="nbNew" style="display:none">●</span></span>
+          <span id="nbChev" style="color:var(--dim); font-size:12px">▾</span>
+        </button>
+        <div id="noticeBoard" style="display:none"></div>
       </div>
 
       <div class="card">
-        <h2>📋 인트로</h2>
+        <h2 id="introHead">📋 인트로</h2>
         <p class="sub" id="gameIntro"></p>
         <img class="introimg" id="gameIntroImg" style="display:none" alt="인트로 이미지">
       </div>
@@ -246,7 +266,7 @@ td.mono{font-family:var(--mono)}
     <div class="tabpane" id="tabHints">
       <div class="kicker">FIELD LOG</div>
       <h1>우리 팀 열람 기록</h1>
-      <p class="sub">누가, 언제, 어떤 힌트를 열었는지 팀 전체에 공유됩니다.</p>
+      <p class="sub" id="hintsSub">누가, 언제, 어떤 힌트를 열었는지 팀 전체에 공유됩니다.</p>
       <div class="statusband">
         <div class="stat"><div class="lb">열람 힌트</div><div class="vl" id="stViews" style="color:var(--gold)">0</div></div>
       </div>
@@ -260,7 +280,7 @@ td.mono{font-family:var(--mono)}
     <div class="tabpane" id="tabCode">
       <div class="kicker">FINAL ACCESS</div>
       <h1>최종 코드 입력</h1>
-      <p class="sub">모든 단서가 가리키는 하나의 코드를 찾아 입력하세요. 오답 시 팀 전체가 일정 시간 입력이 잠깁니다.</p>
+      <p class="sub" id="codeSub">모든 단서가 가리키는 하나의 코드를 찾아 입력하세요. 오답 시 팀 전체가 일정 시간 입력이 잠깁니다.</p>
 
       <div class="card finish" id="finishCard" style="display:none">
         <div class="stamp">MISSION CLEAR</div>
@@ -393,7 +413,10 @@ function tabTo(btn){
   btn.classList.add('on'); $(btn.dataset.pane).classList.add('on');
   renderAll();
 }
-function renderChip(){ $('teamChip').textContent = team ? `${team} · ${myName}` : '팀 미확인'; }
+function renderChip(){
+  const solo = (myTeam && myTeam.solo) || config.soloMode === true;
+  $('teamChip').textContent = team ? (solo ? `개인전 · ${myName}` : `${team} · ${myName}`) : '미등록';
+}
 $('teamChip').onclick = () => {
   if (!team) return;
   if (!confirm('팀을 변경할까요?')) return;
@@ -405,7 +428,7 @@ function leaveTeam(msgText){
   team = ''; localStorage.removeItem('hh_team');
   document.body.dataset.theme = ''; $('phaseBadge').style.display = 'none';
   $('stState').textContent = 'MISSION HQ'; $('stState').style.color = '';
-  $('stElapsed').textContent = '';
+  $('stElapsed').textContent = ''; $('topDot').style.color = '';
   renderChip(); show('joinView');
   if (msgText) openModal('SYSTEM', '알림', msgText);
 }
@@ -418,15 +441,30 @@ function openModal(kicker, title, body, imgSrc){
 }
 function nextModal(){
   const m = modalQueue.shift();
-  if (!m){ $('overlay').classList.remove('show'); return; }
+  if (!m){ $('overlay').classList.remove('show'); maybeReleaseModal(); return; }
   $('mdKicker').textContent = m.kicker;
   $('mdTitle').textContent = m.title;
   $('mdBody').textContent = m.body || '';
   if (m.imgSrc){ $('mdImg').src = m.imgSrc; $('mdImg').style.display = ''; }
   else $('mdImg').style.display = 'none';
   $('overlay').classList.add('show');
+  pushModalState();
 }
 function closeModal(){ nextModal(); }
+
+/* 뒤로가기 시 팝업만 닫기 (페이지 이탈 방지) */
+let modalPushed = false, suppressPop = false;
+const anyModalOpen = () => $('overlay').classList.contains('show') || $('qOverlay').classList.contains('show');
+function pushModalState(){ if (!modalPushed){ modalPushed = true; history.pushState({ hhModal: 1 }, ''); } }
+function maybeReleaseModal(){ if (modalPushed && !anyModalOpen()){ modalPushed = false; suppressPop = true; history.back(); } }
+window.addEventListener('popstate', () => {
+  if (suppressPop){ suppressPop = false; return; }
+  if (!anyModalOpen()){ modalPushed = false; return; }
+  modalPushed = false;
+  modalQueue = [];
+  $('overlay').classList.remove('show');
+  if ($('qOverlay').classList.contains('show')){ $('qOverlay').classList.remove('show'); renderQuestList(); }
+});
 
 /* ---------- 전역 상태 ---------- */
 let config = {}, game = {}, teams = {}, myViews = {}, notices = {}, phases = {}, quests = {}, events = {}, myTeam = null;
@@ -693,8 +731,9 @@ function openQuestDialog(qid, mode){
     btns.innerHTML = `<button onclick="closeQuestDialog()">확인</button>`;
   }
   $('qOverlay').classList.add('show');
+  pushModalState();
 }
-function closeQuestDialog(){ $('qOverlay').classList.remove('show'); renderQuestList(); }
+function closeQuestDialog(){ $('qOverlay').classList.remove('show'); renderQuestList(); maybeReleaseModal(); }
 function acceptQuest(qid){
   if (!game.startedAt || game.endedAt) return alert('게임이 진행 중일 때만 가능합니다.');
   db.ref(`teams/${team}/quests/${qid}`).transaction(cur => {
@@ -856,12 +895,19 @@ function detachTeamListeners(){
 
 /* ---------- 합류 ---------- */
 async function join(){
-  const t = norm($('joinTeam').value);
+  const solo = config.soloMode === true;
   const n = $('joinName').value.trim();
-  const r = $('joinRole').value.trim();
-  if (!t) return $('joinMsg').textContent = '팀 코드를 입력하세요.';
+  const needRole = config.requireRole !== false;
+  const r = needRole ? $('joinRole').value.trim() : $('joinRole').value.trim();
   if (!n) return $('joinMsg').textContent = '이름을 입력하세요.';
-  if (!r) return $('joinMsg').textContent = '직급/직책을 입력하세요.';
+  if (needRole && !r) return $('joinMsg').textContent = '직급/직책을 입력하세요.';
+  let t;
+  if (solo){
+    t = 'P' + myToken.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 10);
+  } else {
+    t = norm($('joinTeam').value);
+    if (!t) return $('joinMsg').textContent = '팀 코드를 입력하세요.';
+  }
   $('joinMsg').textContent = '확인 중...';
   /* 초대 코드 검증 (해시 대조 — DB에 평문 없음) */
   if (config.inviteCodeHash){
@@ -871,8 +917,10 @@ async function join(){
   }
   const snap = await db.ref('teams/' + t).get();
   if (!snap.exists()){
-    if (config.allowSelfJoin === false) return $('joinMsg').textContent = '등록되지 않은 팀입니다. 운영자에게 확인하세요.';
-    await db.ref('teams/' + t).set({ name: t, createdAt: firebase.database.ServerValue.TIMESTAMP, wrongCount: 0 });
+    if (!solo && config.allowSelfJoin === false) return $('joinMsg').textContent = '등록되지 않은 팀입니다. 운영자에게 확인하세요.';
+    await db.ref('teams/' + t).set({ name: solo ? n : t, solo: solo || null, createdAt: firebase.database.ServerValue.TIMESTAMP, wrongCount: 0 });
+  } else if (solo){
+    await db.ref('teams/' + t).update({ name: n, solo: true });
   }
   team = t; myName = n; myRole = r;
   localStorage.setItem('hh_team', t); localStorage.setItem('hh_name', n); localStorage.setItem('hh_role', r);
@@ -884,15 +932,48 @@ async function join(){
 function noticeList(){
   return Object.entries(notices).map(([id, n]) => ({ id, ...n })).sort((a,b) => (b.at||0) - (a.at||0));
 }
+/* 접이식 공지 게시판 — hh_notice_read: 게시판을 연 시점(뱃지 기준), hh_notice_seen: 팝업 표시 기준 */
+let nbOpen = false;
+let nbExpanded = new Set();     /* 펼쳐진 공지 id */
+let nbUnreadSet = new Set();    /* N 태그 표시용 */
+const noticeReadAt = () => Number(localStorage.getItem('hh_notice_read') || 0);
+function toggleNoticeBoard(){
+  nbOpen = !nbOpen;
+  renderNotices();
+}
+function toggleNoticeItem(id){
+  if (nbExpanded.has(id)) nbExpanded.delete(id); else nbExpanded.add(id);
+  renderNotices();
+}
 function renderNotices(){
   const list = noticeList();
-  $('noticeBoard').innerHTML = !list.length ? '<div class="empty">아직 공지가 없습니다.</div>' :
-    list.map(n => `<div class="notice-item">
-      <div class="nt">${n.at ? fmtClock(n.at) : ''}</div>
-      ${n.title ? `<div style="font-weight:700; font-size:15px; margin-bottom:5px; word-break:keep-all">${esc(n.title)}</div>` : ''}
-      <div class="nb">${esc(n.text || '')}</div>
-      ${n.image ? `<img src="${n.image}" alt="공지 이미지">` : ''}
-    </div>`).join('');
+  $('nbCount').textContent = list.length ? `(${list.length})` : '';
+  $('nbChev').textContent = nbOpen ? '▴ 접기' : '▾ 펼치기';
+  const unread = list.filter(n => (n.at || 0) > noticeReadAt());
+  if (nbOpen){
+    /* 열려 있는 동안 도착분 포함, N 태그 유지 후 읽음 처리 */
+    unread.forEach(n => nbUnreadSet.add(n.id));
+    if (list.length) localStorage.setItem('hh_notice_read', String(list[0].at || serverNow()));
+    $('nbNew').style.display = 'none';
+  } else {
+    nbUnreadSet.clear();
+    $('nbNew').style.display = unread.length ? '' : 'none';
+  }
+  $('noticeBoard').style.display = nbOpen ? '' : 'none';
+  if (!nbOpen) return;
+  $('noticeBoard').innerHTML = !list.length ? '<div class="empty" style="padding:0 20px 16px">아직 공지가 없습니다.</div>' :
+    list.map(n => {
+      const title = n.title || (n.text || '').split('\n')[0].slice(0, 26) || '공지';
+      const open = nbExpanded.has(n.id);
+      return `<div class="nrow">
+        <button class="nrow-t" onclick="toggleNoticeItem('${esc(n.id)}')">
+          <span class="nt-time">${n.at ? fmtClock(n.at) : ''}</span>
+          <span class="nt-title">${nbUnreadSet.has(n.id) ? '<span class="ntag">N</span>' : ''}${esc(title)}</span>
+          <span class="nt-chev">${open ? '▴' : '▸'}</span>
+        </button>
+        ${open ? `<div class="nrow-b">${esc(n.text || '')}${n.image ? `<img src="${n.image}" alt="공지 이미지">` : ''}</div>` : ''}
+      </div>`;
+    }).join('');
 }
 function maybePopupNotice(){
   if (!team || !$('hubView').classList.contains('active')) return;
@@ -910,7 +991,13 @@ function maybePopupNotice(){
 function renderStatic(){
   $('gameTitle').textContent = config.title || '작전명 미정';
   $('gameIntro').textContent = config.intro || '운영자가 인트로를 준비하고 있습니다.';
-  $('joinTitle').textContent = config.title ? `「${config.title}」에 합류합니다` : '작전에 합류합니다';
+  $('introHead').textContent = '📋 ' + (config.introTitle || '인트로');
+  const solo = config.soloMode === true;
+  $('teamField').style.display = solo ? 'none' : '';
+  $('roleField').style.display = config.requireRole === false ? 'none' : '';
+  $('hintsSub').textContent = solo ? '언제 어떤 힌트를 열었는지 기록됩니다.' : '누가, 언제, 어떤 힌트를 열었는지 팀 전체에 공유됩니다.';
+  $('codeSub').textContent = solo ? '모든 단서가 가리키는 하나의 코드를 찾아 입력하세요. 오답 시 일정 시간 입력이 잠깁니다.' : '모든 단서가 가리키는 하나의 코드를 찾아 입력하세요. 오답 시 팀 전체가 일정 시간 입력이 잠깁니다.';
+  renderChip();
   if (config.introImage){ $('gameIntroImg').src = config.introImage; $('gameIntroImg').style.display = ''; }
   else $('gameIntroImg').style.display = 'none';
 }
@@ -921,6 +1008,7 @@ function renderAll(){
   const started = !!game.startedAt, ended = !!game.endedAt;
   $('stState').textContent = ended ? '종료' : started ? '진행중' : '대기';
   $('stState').style.color = (started && !ended) ? 'var(--paper)' : '';
+  $('topDot').style.color = (started && !ended) ? 'var(--green)' : '';
   $('stViews').textContent = Object.keys(myViews).length;
 
   renderViewLog();
@@ -979,7 +1067,8 @@ function renderCooldown(){
 function myRankText(){
   const done = Object.entries(teams).filter(([,t]) => t.finishedAt).sort((a,b) => a[1].elapsedMs - b[1].elapsedMs);
   const idx = done.findIndex(([id]) => id === team);
-  return idx >= 0 ? `전체 ${done.length}팀 완료 · 우리 팀 ${idx + 1}위` : '';
+  const solo = config.soloMode === true || (myTeam && myTeam.solo);
+  return idx >= 0 ? (solo ? `전체 ${done.length}명 완료 · 내 순위 ${idx + 1}위` : `전체 ${done.length}팀 완료 · 우리 팀 ${idx + 1}위`) : '';
 }
 
 function renderRank(){
@@ -987,7 +1076,7 @@ function renderRank(){
   const useMoney = Object.values(quests).some(q => q && !q.disabled) || Object.values(teams).some(t => t && t.money);
   const list = Object.entries(teams).map(([id, t]) => {
     const orders = Object.keys(t.phases || {}).map(pid => (phases[pid] && phases[pid].order) || 0);
-    return { id, fin: !!t.finishedAt, elapsed: t.elapsedMs ?? Infinity,
+    return { id, name: t.name || id, fin: !!t.finishedAt, elapsed: t.elapsedMs ?? Infinity,
              money: t.money || 0,
              phase: orders.length ? Math.max(...orders) : 0 };
   });
@@ -999,7 +1088,7 @@ function renderRank(){
       const r = t.fin ? ++rank : '-';
       return `<tr class="${t.id === team ? 'me' : ''}">
         <td class="mono">${r === 1 ? '🏆 1' : r}</td>
-        <td>${esc(t.id)}</td>
+        <td>${esc(t.name)}</td>
         ${usePhase ? `<td class="mono">${t.phase ? 'P' + t.phase : '-'}</td>` : ''}
         ${useMoney ? `<td class="mono">${t.money ? Number(t.money).toLocaleString() : '-'}</td>` : ''}
         <td class="mono">${t.fin ? fmtDur(t.elapsed) : '진행중'}</td></tr>`;

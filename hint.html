@@ -365,7 +365,7 @@ async function checkPhasesAfterView(){
     const qstate = qs.val() || {};
     const fired = es.val() || {};
     Object.entries(phases).forEach(([pid, p]) => {
-      if (reached[pid]) return;
+      if (p.disabled || reached[pid]) return;
       const reqH = Object.keys(p.requiredHints || {});
       const reqQ = Object.keys(p.requiredQuests || {});
       if (!reqH.length && !reqQ.length) return;
@@ -376,7 +376,7 @@ async function checkPhasesAfterView(){
     });
     /* 퀘스트: 힌트 조건 충족 + (시간 조건 있으면 함께 판정) */
     Object.entries(quests).forEach(([qid, q]) => {
-      if (qstate[qid]) return;
+      if (q.disabled || qstate[qid]) return;
       const reqH = Object.keys(q.triggerHints || {});
       const hasTime = Number(q.triggerAfterMin) > 0;
       if (!reqH.length && !hasTime) return;
@@ -387,7 +387,7 @@ async function checkPhasesAfterView(){
     });
     /* 팝업 메시지(이벤트): 힌트·퀘스트·Phase·시간 조건 모두 충족 시 발동 */
     Object.entries(events).forEach(([eid, ev]) => {
-      if (fired[eid]) return;
+      if (ev.disabled || fired[eid]) return;
       const reqH = Object.keys(ev.triggerHints || {});
       const reqQ = Object.keys(ev.triggerQuests || {});
       const reqP = Object.keys(ev.triggerPhases || {});

@@ -484,7 +484,7 @@ function checkPhases(){
   const reached = (myTeam && myTeam.phases) || {};
   const qstate = (myTeam && myTeam.quests) || {};
   Object.entries(phases).forEach(([pid, p]) => {
-    if (reached[pid]) return;
+    if (p.disabled || reached[pid]) return;
     const reqH = Object.keys(p.requiredHints || {});
     const reqQ = Object.keys(p.requiredQuests || {});
     if (!reqH.length && !reqQ.length) return;
@@ -538,7 +538,7 @@ function checkEvents(){
   if (!team || !game.startedAt || game.endedAt || !Object.keys(events).length) return;
   const fired = (myTeam && myTeam.events) || {};
   Object.entries(events).forEach(([eid, ev]) => {
-    if (fired[eid]) return;
+    if (ev.disabled || fired[eid]) return;
     if (!eventTriggerOk(ev)) return;
     db.ref(`teams/${team}/events/${eid}`).transaction(cur => cur ? undefined : { at: serverNow() });
   });
@@ -618,7 +618,7 @@ function checkQuests(){
   if (!team || !game.startedAt || game.endedAt || !Object.keys(quests).length) return;
   const qstate = (myTeam && myTeam.quests) || {};
   Object.entries(quests).forEach(([qid, q]) => {
-    if (qstate[qid]) return;
+    if (q.disabled || qstate[qid]) return;
     if (!questTriggerOk(q)) return;
     db.ref(`teams/${team}/quests/${qid}`).transaction(cur => cur ? undefined : { status: 'offered', offeredAt: serverNow() });
   });

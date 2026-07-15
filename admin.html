@@ -179,12 +179,12 @@ td .memo{color:var(--dim); font-size:12px}
   <div class="pane on" id="paneSetting">
     <div class="card">
       <h2>시나리오 설정</h2>
-      <p class="sub">이 도구는 범용 틀입니다. 제목과 브리핑만 바꾸면 공장 트러블, 살인사건, 보물찾기 등 어떤 시나리오로도 운영할 수 있습니다.</p>
+      <p class="sub">이 도구는 범용 틀입니다. 제목과 인트로만 바꾸면 공장 트러블, 살인사건, 보물찾기 등 어떤 시나리오로도 운영할 수 있습니다.</p>
       <label>게임 제목</label>
       <input type="text" id="cfgTitle" placeholder="예: 사라진 설계도를 찾아라">
-      <label>브리핑(인트로) 문구 — 팀 화면 메인에 표시</label>
+      <label>인트로 문구 — 팀 화면 메인에 표시</label>
       <textarea id="cfgIntro" placeholder="예: 어젯밤 공장 제어실에서 핵심 설계도가 사라졌다. 현장 곳곳에 남은 단서를 찾아, 금고를 여는 최종 코드를 알아내라."></textarea>
-      <label>브리핑 이미지 (선택 — 인트로 문구 아래에 표시)</label>
+      <label>인트로 이미지 (선택 — 인트로 문구 아래에 표시)</label>
       <div class="imgup" id="up_intro">
         <div class="drop" onclick="pickImage('intro')">이미지 선택 또는 촬영 (자동 압축)</div>
         <div class="prev"><button class="btn danger tiny rm" onclick="clearImage('intro')">제거</button><img alt="미리보기"></div>
@@ -388,9 +388,9 @@ td .memo{color:var(--dim); font-size:12px}
       <input type="text" id="qRewardText" placeholder="예: 우리 손주가 아끼던 물건을 주지">
       <label>발동 조건 ① — 힌트 열람 (선택한 힌트를 모두 열람하면)</label>
       <div id="questHintPick" style="margin-top:4px"><span class="empty" style="padding:6px 0; display:block; text-align:left">등록된 힌트가 없습니다.</span></div>
-      <label>발동 조건 ② — 게임 시작 후 경과 시간 (분, 비우면 사용 안함)</label>
+      <label>발동 조건 ② — 경과 시간 (분, 비우면 사용 안함)</label>
       <input type="number" id="qAfterMin" min="1" placeholder="예: 10 → 시작 10분 후">
-      <p class="sub" style="margin-top:8px">①만 설정하면 힌트 조건, ②만 설정하면 시간 조건, <b>둘 다 설정하면 두 조건을 모두 충족해야</b> 발동합니다. 아무것도 설정하지 않으면 발동하지 않습니다.</p>
+      <p class="sub" style="margin-top:8px">①만 설정: 힌트 조건 충족 시 발동 / ②만 설정: 게임 시작 후 N분에 발동 / <b>둘 다 설정: ① 힌트를 모두 열람한 시점부터 N분 후</b> 발동합니다. 아무것도 설정하지 않으면 발동하지 않습니다.</p>
       <div class="inline" style="margin-top:18px">
         <button class="btn" onclick="saveQuest()" id="qSaveBtn">Quest 저장</button>
         <button class="btn ghost" onclick="clearQuestForm()" id="qCancelBtn" style="display:none">수정 취소</button>
@@ -408,7 +408,7 @@ td .memo{color:var(--dim); font-size:12px}
   <div class="pane" id="paneEvent">
     <div class="card">
       <h2 id="eventFormTitle">새 팝업 메시지 등록</h2>
-      <p class="sub">지정한 조건(힌트 열람 · 퀘스트 완료 · Phase 도달 · 경과 시간)을 <b>모두 충족</b>하면 팀 전체에게 특별 정보 팝업(📡 INTEL)이 뜨고, '기록' 탭 타임라인에 영구 보관됩니다. Phase처럼 국면을 바꾸거나 Quest처럼 과제를 주지 않고, 순수하게 정보만 전달합니다. 등록하지 않으면 참가자 화면에 나타나지 않습니다.</p>
+      <p class="sub">지정한 조건(힌트 열람 · 퀘스트 완료 · Phase 도달 · 경과 시간)을 <b>모두 충족</b>하면 팀 전체에게 특별 정보 팝업(INTEL)이 뜨고, '기록' 탭 타임라인에 영구 보관됩니다. Phase처럼 국면을 바꾸거나 Quest처럼 과제를 주지 않고, 순수하게 정보만 전달합니다. 등록하지 않으면 참가자 화면에 나타나지 않습니다.</p>
       <label>팝업 제목</label>
       <input type="text" id="evName" placeholder="예: 익명의 제보">
       <label>팝업 내용</label>
@@ -424,9 +424,9 @@ td .memo{color:var(--dim); font-size:12px}
       <div id="eventQuestPick" style="margin-top:4px"><span class="empty" style="padding:6px 0; display:block; text-align:left">등록된 퀘스트가 없습니다.</span></div>
       <label>발동 조건 ③ — Phase 도달 (선택한 Phase에 모두 도달)</label>
       <div id="eventPhasePick" style="margin-top:4px"><span class="empty" style="padding:6px 0; display:block; text-align:left">등록된 Phase가 없습니다.</span></div>
-      <label>발동 조건 ④ — 게임 시작 후 경과 시간 (분, 비우면 사용 안함)</label>
+      <label>발동 조건 ④ — 경과 시간 (분, 비우면 사용 안함)</label>
       <input type="number" id="evAfterMin" min="1" placeholder="예: 20 → 시작 20분 후">
-      <p class="sub" style="margin-top:8px">설정한 조건들을 <b>모두(AND)</b> 충족해야 발동합니다. 최소 1개는 설정해야 합니다.</p>
+      <p class="sub" style="margin-top:8px">설정한 조건들을 <b>모두(AND)</b> 충족해야 발동합니다. 시간(④)은 다른 조건(①~③)이 있으면 <b>마지막 조건이 충족된 시점부터</b>, 없으면 게임 시작부터 계산됩니다. 최소 1개는 설정해야 합니다.</p>
       <div class="inline" style="margin-top:18px">
         <button class="btn" onclick="saveEvent()" id="evSaveBtn">팝업 저장</button>
         <button class="btn ghost" onclick="clearEventForm()" id="evCancelBtn" style="display:none">수정 취소</button>
@@ -445,6 +445,8 @@ td .memo{color:var(--dim); font-size:12px}
     <div class="card">
       <h2>공지 발송</h2>
       <p class="sub">발송 즉시 모든 참가자 화면에 팝업으로 표시되고, 메인 탭 공지 게시판에 쌓입니다.</p>
+      <label>공지 제목</label>
+      <input type="text" id="nTitle" placeholder="예: 힌트 위치 변경 안내">
       <label>공지 내용</label>
       <textarea id="nText" placeholder="예: 3층 힌트 위치가 변경되었습니다. 안내데스크 옆을 확인하세요."></textarea>
       <label>공지 이미지 (선택)</label>
@@ -606,7 +608,7 @@ let liveTimer = null;
 
 function boot(){
   db.ref('secrets').on('value', s => { secretsData = s.val() || {}; fillConfig(); renderApprovals(); });
-  db.ref('config').on('value', s => { config = s.val() || {}; fillConfig(); renderLockBtn(); });
+  db.ref('config').on('value', s => { config = s.val() || {}; fillConfig(); renderLockBtn(); renderHints(); });
   db.ref('game').on('value', s => { game = s.val() || {}; renderGameState(); });
   db.ref('hints').on('value', s => { hints = s.val() || {}; renderHints(); renderPhaseHintPick(); renderQuestPick(); renderEventPicks(); });
   db.ref('teams').on('value', s => { teams = s.val() || {}; renderTeamCtrl(); renderLive(); renderApprovals(); });
@@ -1181,13 +1183,14 @@ function renderEventsAdmin(){
 
 /* ---------- 공지 ---------- */
 function sendNotice(){
+  const title = $('nTitle').value.trim();
   const text = $('nText').value.trim();
-  if (!text && !images.notice) return;
+  if (!title && !text && !images.notice) return;
   db.ref('notices').push({
-    text, image: images.notice || null,
+    title, text, image: images.notice || null,
     at: firebase.database.ServerValue.TIMESTAMP
   }).then(() => {
-    $('nText').value = ''; clearImage('notice');
+    $('nTitle').value = ''; $('nText').value = ''; clearImage('notice');
     $('nMsg').textContent = '발송했습니다. 참가자 화면에 팝업으로 표시됩니다.';
     setTimeout(() => $('nMsg').textContent = '', 3000);
   });
@@ -1202,6 +1205,7 @@ function renderNoticeAdmin(){
     list.map(n => `<div class="noticerow">
       <div class="nt"><span>${n.at ? fmtClock(n.at) : ''}</span>
         <button class="btn danger tiny" onclick="delNotice('${esc(n.id)}')">삭제</button></div>
+      ${n.title ? `<div style="font-weight:700; margin-bottom:4px">${esc(n.title)}</div>` : ''}
       <div class="nb">${esc(n.text || '')}</div>
       ${n.image ? `<img src="${n.image}" alt="공지 이미지">` : ''}
     </div>`).join('');

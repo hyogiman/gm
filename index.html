@@ -221,17 +221,15 @@ td.mono{font-family:var(--mono)}
   <!-- 허브 -->
   <section id="hubView" class="view">
 
+    <div class="statusband" style="margin:0 0 18px">
+      <div class="stat"><div class="lb">상태</div><div class="vl" id="stState">-</div></div>
+      <div class="stat"><div class="lb">경과 시간</div><div class="vl live" id="stElapsed">--:--</div></div>
+    </div>
+
     <!-- 탭 1: 메인 -->
     <div class="tabpane on" id="tabMain">
-      <div class="kicker">BRIEFING</div>
+      <div class="kicker">INTRO</div>
       <h1 id="gameTitle">-</h1>
-
-      <div class="statusband">
-        <div class="stat"><div class="lb">상태</div><div class="vl" id="stState">-</div></div>
-        <div class="stat"><div class="lb">경과 시간</div><div class="vl live" id="stElapsed">--:--</div></div>
-        <div class="stat"><div class="lb">열람 힌트</div><div class="vl" id="stViews">0</div></div>
-        <div class="stat" id="stMoneyBox" style="display:none"><div class="lb">자금</div><div class="vl" id="stMoney" style="color:var(--gold)">0</div></div>
-      </div>
 
       <div class="card">
         <h2>📢 운영자 공지</h2>
@@ -239,9 +237,9 @@ td.mono{font-family:var(--mono)}
       </div>
 
       <div class="card">
-        <h2>📋 브리핑</h2>
+        <h2>📋 인트로</h2>
         <p class="sub" id="gameIntro"></p>
-        <img class="introimg" id="gameIntroImg" style="display:none" alt="브리핑 이미지">
+        <img class="introimg" id="gameIntroImg" style="display:none" alt="인트로 이미지">
       </div>
     </div>
 
@@ -250,6 +248,9 @@ td.mono{font-family:var(--mono)}
       <div class="kicker">FIELD LOG</div>
       <h1>우리 팀 열람 기록</h1>
       <p class="sub">누가, 언제, 어떤 힌트를 열었는지 팀 전체에 공유됩니다.</p>
+      <div class="statusband">
+        <div class="stat"><div class="lb">열람 힌트</div><div class="vl" id="stViews" style="color:var(--gold)">0</div></div>
+      </div>
       <div class="card">
         <div id="viewLog"><div class="empty">아직 열람한 힌트가 없습니다.</div></div>
         <button class="ghost" onclick="location.href='hint.html'">힌트 코드 직접 입력하기</button>
@@ -281,7 +282,7 @@ td.mono{font-family:var(--mono)}
     <div class="tabpane" id="tabLog">
       <div class="kicker">CASE FILE</div>
       <h1>진행 기록</h1>
-      <p class="sub">퀘스트와 팀이 도달한 국면이 기록됩니다.</p>
+      <p class="sub">팀의 진행 과정이 시간순으로 기록됩니다.</p>
       <div class="card" id="questSection" style="display:none">
         <h2>🧭 퀘스트</h2>
         <div id="questList"><div class="empty">받은 퀘스트가 없습니다.</div></div>
@@ -533,13 +534,20 @@ function eventTriggerOk(ev){
   const reqP = Object.keys(ev.triggerPhases || {});
   const hasTime = Number(ev.triggerAfterMin) > 0;
   if (!reqH.length && !reqQ.length && !reqP.length && !hasTime) return false;
-  const viewed = new Set(Object.keys(myViews));
   const qstate = (myTeam && myTeam.quests) || {};
   const reached = (myTeam && myTeam.phases) || {};
-  return reqH.every(c => viewed.has(c))
-    && reqQ.every(qid => qstate[qid] && qstate[qid].status === 'done')
-    && reqP.every(pid => reached[pid])
-    && (!hasTime || (game.startedAt && serverNow() - game.startedAt >= Number(ev.triggerAfterMin) * 60000));
+  if (!reqH.every(c => myViews[c])) return false;
+  if (!reqQ.every(qid => qstate[qid] && qstate[qid].status === 'done')) return false;
+  if (!reqP.every(pid => reached[pid])) return false;
+  if (!hasTime) return true;
+  /* 시간 기준: 다른 조건이 있으면 마지막 충족 시점부터, 없으면 게임 시작부터 */
+  const times = [
+    ...reqH.map(c => (myViews[c] && myViews[c].viewedAt) || 0),
+    ...reqQ.map(qid => (qstate[qid] && qstate[qid].doneAt) || 0),
+    ...reqP.map(pid => (reached[pid] && reached[pid].at) || 0)
+  ];
+  const base = times.length ? Math.max(...times) : (game.startedAt || 0);
+  return base > 0 && serverNow() - base >= Number(ev.triggerAfterMin) * 60000;
 }
 function checkEvents(){
   if (!team || !game.startedAt || game.endedAt || !Object.keys(events).length) return;
@@ -560,7 +568,7 @@ function onEventData(){
     const ev = events[eid]; if (!ev) return;
     if (seen[eid] === v.at) return;
     seen[eid] = v.at; dirty = true;
-    if (bootDone) openModal('📡 INTEL', ev.name || '특별 정보 입수', ev.text || '', ev.image || null);
+    if (bootDone) openModal('INTEL', ev.name || '특별 정보 입수', ev.text || '', ev.image || null);
   });
   if (dirty) localStorage.setItem('hh_event_seen', JSON.stringify(seen));
 }
@@ -586,7 +594,7 @@ function renderLog(){
         <div class="tx">${esc(x.p.message || '')}</div>
         ${x.p.image ? `<img src="${x.p.image}" alt="Phase 이미지">` : ''}</div></div>`;
       if (x.type === 'event') return `<div class="tl-item"><div class="tl-dot" style="background:var(--steel); box-shadow:0 0 8px rgba(126,147,172,.5)"></div><div class="tl-body">
-        <div class="tt">📡 ${esc(x.ev.name || '특별 정보')}</div>
+        <div class="tt">${esc(x.ev.name || '특별 정보')}</div>
         <div class="tm">${fmtClock(x.at)} 수신</div>
         <div class="tx">${esc(x.ev.text || '')}</div>
         ${x.ev.image ? `<img src="${x.ev.image}" alt="이벤트 이미지">` : ''}</div></div>`;
@@ -616,10 +624,13 @@ function questTriggerOk(q){
   const reqH = Object.keys(q.triggerHints || {});
   const hasTime = Number(q.triggerAfterMin) > 0;
   if (!reqH.length && !hasTime) return false;   /* 트리거 미설정 → 발동 안함 */
-  const viewed = new Set(Object.keys(myViews));
-  const hOk = reqH.length ? reqH.every(c => viewed.has(c)) : true;
-  const tOk = hasTime ? (game.startedAt && serverNow() - game.startedAt >= Number(q.triggerAfterMin) * 60000) : true;
-  return hOk && tOk;
+  if (!reqH.every(c => myViews[c])) return false;
+  if (!hasTime) return true;
+  /* 시간 기준: 힌트 조건이 있으면 마지막 힌트 열람 시점부터, 없으면 게임 시작부터 */
+  const base = reqH.length
+    ? Math.max(...reqH.map(c => (myViews[c] && myViews[c].viewedAt) || 0))
+    : (game.startedAt || 0);
+  return base > 0 && serverNow() - base >= Number(q.triggerAfterMin) * 60000;
 }
 function checkQuests(){
   if (!team || !game.startedAt || game.endedAt || !Object.keys(quests).length) return;
@@ -872,6 +883,7 @@ function renderNotices(){
   $('noticeBoard').innerHTML = !list.length ? '<div class="empty">아직 공지가 없습니다.</div>' :
     list.map(n => `<div class="notice-item">
       <div class="nt">${n.at ? fmtClock(n.at) : ''}</div>
+      ${n.title ? `<div style="font-weight:700; font-size:15px; margin-bottom:5px; word-break:keep-all">${esc(n.title)}</div>` : ''}
       <div class="nb">${esc(n.text || '')}</div>
       ${n.image ? `<img src="${n.image}" alt="공지 이미지">` : ''}
     </div>`).join('');
@@ -884,14 +896,14 @@ function maybePopupNotice(){
   const seenAt = Number(localStorage.getItem('hh_notice_seen') || 0);
   if ((latest.at || 0) > seenAt){
     localStorage.setItem('hh_notice_seen', String(latest.at || serverNow()));
-    openModal('NOTICE', '📢 운영자 공지', latest.text || '', latest.image || null);
+    openModal('NOTICE', latest.title || '📢 운영자 공지', latest.text || '', latest.image || null);
   }
 }
 
 /* ---------- 렌더 ---------- */
 function renderStatic(){
   $('gameTitle').textContent = config.title || '작전명 미정';
-  $('gameIntro').textContent = config.intro || '운영자가 브리핑을 준비하고 있습니다.';
+  $('gameIntro').textContent = config.intro || '운영자가 인트로를 준비하고 있습니다.';
   $('joinTitle').textContent = config.title ? `「${config.title}」에 합류합니다` : '작전에 합류합니다';
   if (config.introImage){ $('gameIntroImg').src = config.introImage; $('gameIntroImg').style.display = ''; }
   else $('gameIntroImg').style.display = 'none';
@@ -904,9 +916,6 @@ function renderAll(){
   $('stState').textContent = ended ? '종료' : started ? '진행중' : '대기';
   $('stState').className = 'vl' + (started && !ended ? ' live' : '');
   $('stViews').textContent = Object.keys(myViews).length;
-  const useMoney = Object.values(quests).some(q => q && !q.disabled) || !!(myTeam && (myTeam.money || myTeam.quests));
-  $('stMoneyBox').style.display = useMoney ? '' : 'none';
-  if (useMoney) $('stMoney').textContent = Number((myTeam && myTeam.money) || 0).toLocaleString();
 
   renderViewLog();
 
@@ -967,21 +976,24 @@ function myRankText(){
 
 function renderRank(){
   const usePhase = Object.keys(phases).length > 0;
+  const useMoney = Object.values(quests).some(q => q && !q.disabled) || Object.values(teams).some(t => t && t.money);
   const list = Object.entries(teams).map(([id, t]) => {
     const orders = Object.keys(t.phases || {}).map(pid => (phases[pid] && phases[pid].order) || 0);
     return { id, fin: !!t.finishedAt, elapsed: t.elapsedMs ?? Infinity,
+             money: t.money || 0,
              phase: orders.length ? Math.max(...orders) : 0 };
   });
   list.sort((a,b) => (a.fin === b.fin) ? (a.fin ? a.elapsed - b.elapsed : b.phase - a.phase) : (a.fin ? -1 : 1));
   let rank = 0;
   $('rankBoard').innerHTML = !list.length ? '<div class="empty">등록된 팀이 없습니다.</div>' :
-    `<table><thead><tr><th>순위</th><th>팀</th>${usePhase ? '<th>Phase</th>' : ''}<th>기록</th></tr></thead><tbody>` +
+    `<table><thead><tr><th>순위</th><th>팀</th>${usePhase ? '<th>Phase</th>' : ''}${useMoney ? '<th>💰</th>' : ''}<th>기록</th></tr></thead><tbody>` +
     list.map(t => {
       const r = t.fin ? ++rank : '-';
       return `<tr class="${t.id === team ? 'me' : ''}">
         <td class="mono">${r === 1 ? '🏆 1' : r}</td>
         <td>${esc(t.id)}</td>
         ${usePhase ? `<td class="mono">${t.phase ? 'P' + t.phase : '-'}</td>` : ''}
+        ${useMoney ? `<td class="mono">${t.money ? Number(t.money).toLocaleString() : '-'}</td>` : ''}
         <td class="mono">${t.fin ? fmtDur(t.elapsed) : '진행중'}</td></tr>`;
     }).join('') + '</tbody></table>';
 }

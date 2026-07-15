@@ -190,7 +190,11 @@ td.mono{font-family:var(--mono)}
 <body>
 
 <div class="topline">
-  <span><span class="dot">●</span> MISSION HQ</span>
+  <span style="display:flex; gap:8px; align-items:center">
+    <span class="dot">●</span>
+    <span id="stState">MISSION HQ</span>
+    <span id="stElapsed" style="color:var(--gold); font-weight:700"></span>
+  </span>
   <span style="display:flex; gap:14px; align-items:center">
     <span id="phaseBadge" style="color:var(--gold); display:none; font-weight:700"></span>
     <span id="teamChip">-</span>
@@ -220,11 +224,6 @@ td.mono{font-family:var(--mono)}
 
   <!-- 허브 -->
   <section id="hubView" class="view">
-
-    <div class="statusband" style="margin:0 0 18px">
-      <div class="stat"><div class="lb">상태</div><div class="vl" id="stState">-</div></div>
-      <div class="stat"><div class="lb">경과 시간</div><div class="vl live" id="stElapsed">--:--</div></div>
-    </div>
 
     <!-- 탭 1: 메인 -->
     <div class="tabpane on" id="tabMain">
@@ -405,6 +404,8 @@ function leaveTeam(msgText){
   if (team) db.ref(`teams/${team}/members/${myToken}`).remove();
   team = ''; localStorage.removeItem('hh_team');
   document.body.dataset.theme = ''; $('phaseBadge').style.display = 'none';
+  $('stState').textContent = 'MISSION HQ'; $('stState').style.color = '';
+  $('stElapsed').textContent = '';
   renderChip(); show('joinView');
   if (msgText) openModal('SYSTEM', '알림', msgText);
 }
@@ -914,7 +915,7 @@ function renderAll(){
 
   const started = !!game.startedAt, ended = !!game.endedAt;
   $('stState').textContent = ended ? '종료' : started ? '진행중' : '대기';
-  $('stState').className = 'vl' + (started && !ended ? ' live' : '');
+  $('stState').style.color = (started && !ended) ? 'var(--paper)' : '';
   $('stViews').textContent = Object.keys(myViews).length;
 
   renderViewLog();
